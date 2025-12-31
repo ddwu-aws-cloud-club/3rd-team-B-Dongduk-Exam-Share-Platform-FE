@@ -1,0 +1,152 @@
+.signup-container {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.signup-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.signup-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.signup-box {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.signup-box h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+}
+
+.email-verification-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.email-verification-group input {
+  flex: 1;
+}
+
+.verify-button {
+  padding: 0.9rem 1.2rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.verify-button:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.verify-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.verified-badge {
+  padding: 0.9rem 1.2rem;
+  background: #4caf50;
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.verification-code-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.verification-code-group input {
+  flex: 1;
+}
+
+.verify-code-button {
+  padding: 0.9rem 1.2rem;
+  background: #764ba2;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.verify-code-button:hover {
+  background: #6a3f8f;
+}
+
+.signup-button {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 1rem;
+}
+
+.signup-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+.signup-button:active {
+  transform: translateY(0);
+}
+
+.signup-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.signup-footer p {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 968px) {
+  .signup-container {
+    flex-direction: column;
+  }
+
+  .signup-left {
+    display: none;
+  }
+
+  .signup-box {
+    margin: 2rem auto;
+  }
+}
