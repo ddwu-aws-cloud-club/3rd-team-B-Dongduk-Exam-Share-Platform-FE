@@ -25,7 +25,7 @@ export default function App() {
       )}
 
       {/* 임시 이동 버튼 */}
-      {/* <button onClick={() => setCurrentPage("pdf")}>PDF 업로드로 이동</button> */}
+      {<button onClick={() => setCurrentPage("pdf")}>PDF 업로드로 이동</button>}
     </div>
   );
 }
