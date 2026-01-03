@@ -2,6 +2,7 @@ import { useState } from 'react';
 import logo from '../assets/somshare_logo.png';
 import character from '../assets/somshare_character.png';
 import './Signup.css';
+import { sendVerificationCode, verifyCode, signup } from '../api/auth.api';
 
 interface SignupProps {
   onSwitchToLogin: () => void;
@@ -14,44 +15,85 @@ function Signup({ onSwitchToLogin }: SignupProps) {
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerificationSent, setIsVerificationSent] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSendVerification = () => {
-    // TODO: 이메일 인증 API 연동
-    if (email && email.endsWith('@dongduk.ac.kr')) {
+  const handleSendVerification = async () => {
+    if (!email || !email.endsWith('@dongduk.ac.kr')) {
+      setError('동덕여대 이메일 주소를 입력해주세요. (학번@dongduk.ac.kr)');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await sendVerificationCode(email);
       setIsVerificationSent(true);
-      console.log('Verification email sent to:', email);
-      alert('인증 메일이 발송되었습니다. 이메일을 확인해주세요.');
-    } else {
-      alert('동덕여대 이메일 주소를 입력해주세요. (학번@dongduk.ac.kr)');
+      alert(response.message + ' 콘솔 로그를 확인하세요!');
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : '인증 코드 전송 중 오류가 발생했습니다.';
+      setError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleVerifyCode = () => {
-    // TODO: 인증 코드 확인 API 연동
-    if (verificationCode) {
+  const handleVerifyCode = async () => {
+    if (!verificationCode) {
+      setError('인증 코드를 입력해주세요.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await verifyCode(email, verificationCode);
       setIsEmailVerified(true);
-      console.log('Verification code:', verificationCode);
-      alert('이메일 인증이 완료되었습니다!');
+      alert(response.message);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : '인증 코드 확인 중 오류가 발생했습니다.';
+      setError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isEmailVerified) {
-      alert('이메일 인증을 완료해주세요.');
+      setError('이메일 인증을 완료해주세요.');
       return;
     }
 
     if (password !== confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
+      setError('비밀번호가 일치하지 않습니다.');
       return;
     }
 
-    // TODO: 회원가입 API 연동
-    console.log('Signup attempt:', { email, password });
-    alert('회원가입이 완료되었습니다!');
-    onSwitchToLogin();
+    if (password.length < 8) {
+      setError('비밀번호는 최소 8자 이상이어야 합니다.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await signup(email, password);
+      alert(response.message);
+      onSwitchToLogin();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : '회원가입 중 오류가 발생했습니다.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,7 +126,7 @@ function Signup({ onSwitchToLogin }: SignupProps) {
                     type="button"
                     onClick={handleSendVerification}
                     className="verify-button"
-                    disabled={isVerificationSent}
+                    disabled={isVerificationSent || loading}
                   >
                     {isVerificationSent ? '전송됨' : '인증'}
                   </button>
@@ -102,7 +144,7 @@ function Signup({ onSwitchToLogin }: SignupProps) {
                   <input
                     type="text"
                     id="verificationCode"
-                    placeholder="이메일로 받은 인증 코드를 입력하세요"
+                    placeholder="6자리 인증 코드를 입력하세요"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value)}
                     required
@@ -111,6 +153,7 @@ function Signup({ onSwitchToLogin }: SignupProps) {
                     type="button"
                     onClick={handleVerifyCode}
                     className="verify-code-button"
+                    disabled={loading}
                   >
                     확인
                   </button>
@@ -121,7 +164,7 @@ function Signup({ onSwitchToLogin }: SignupProps) {
             {isEmailVerified && (
               <>
                 <div className="input-group">
-                  <label htmlFor="password">비밀번호</label>
+                  <label htmlFor="password">비밀번호 (최소 8자)</label>
                   <input
                     type="password"
                     id="password"
@@ -144,11 +187,13 @@ function Signup({ onSwitchToLogin }: SignupProps) {
                   />
                 </div>
 
-                <button type="submit" className="signup-button">
-                  가입하기
+                <button type="submit" className="signup-button" disabled={loading}>
+                  {loading ? '가입 중...' : '가입하기'}
                 </button>
               </>
             )}
+
+            {error && <p className="error-message">{error}</p>}
           </form>
 
           <div className="signup-footer">
