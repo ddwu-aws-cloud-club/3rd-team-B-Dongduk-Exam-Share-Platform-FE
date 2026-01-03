@@ -1,5 +1,6 @@
 ﻿import { useMemo, useRef, useState, type DragEvent } from "react";
-import { API_BASE, uploadFile, type UploadResult } from "./api/file.api";
+import { uploadFile, type UploadResult } from "./api/file.api";
+import { API_BASE } from "./api/client";
 
 export default function PdfDropzone() {
   const [isDragging, setIsDragging] = useState(false);
