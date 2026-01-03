@@ -1,13 +1,5 @@
 ﻿import { useMemo, useRef, useState, type DragEvent } from "react";
-
-type UploadResult = {
-  originalName: string;
-  storedName: string;
-  url: string;
-  size: number;
-};
-
-const API_BASE = "http://localhost:8080";
+import { API_BASE, uploadFile, type UploadResult } from "./api/file.api";
 
 export default function PdfDropzone() {
   const [isDragging, setIsDragging] = useState(false);
@@ -64,20 +56,7 @@ export default function PdfDropzone() {
     setResult(null);
 
     try {
-      const form = new FormData();
-      form.append("file", file);
-
-      const res = await fetch(`${API_BASE}/api/files/upload`, {
-        method: "POST",
-        body: form,
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "업로드 실패");
-      }
-
-      const data: UploadResult = await res.json();
+      const data = await uploadFile(file);
       setResult(data);
     } catch (err: unknown) {
       const message =
