@@ -8,29 +8,154 @@ body {
                Roboto, Helvetica, Arial, sans-serif;
   background-color: #fafafa;
   padding: 32px;
-  color: #222;
+  color: #741E37;
 }
 
 /* 제목 */
 h2 {
   margin-bottom: 20px;
+  color: #741E37;
+  font-weight: 700;
 }
 
 /* 드래그 앤 드롭 영역 */
 #dropzone {
-  border: 2px dashed #b5b5b5;
+  border: 2px dashed #741E37;
   border-radius: 12px;
   padding: 40px 20px;
   text-align: center;
   cursor: pointer;
   background-color: #fff;
+  color: #555;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* 드래그 중일 때 */
+/* 드래그 중 */
 #dropzone.dragover {
-  border-color: #3b82f6;      /* 파란색 */
-  background-color: #eff6ff;  /* 연한 파랑 */
+  background-color: #F6EEF1;
 }
 
-/* 파일 정보 표시 *
+/* 파일 목록 영역 */
+#fileInfo {
+  margin-top: 20px;
+}
+
+/* 파일 한 줄 (줄바꿈 방지) */
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  margin-top: 8px;
+  padding: 10px 12px;
+  background-color: #F6EEF1;
+  border-left: 4px solid #741E37;
+  border-radius: 8px;
+}
+
+/* 파일명 + 용량 묶음 */
+.file-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 파일명 */
+.file-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #741E37;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 520px;
+}
+
+/* 용량 */
+.file-meta {
+  font-size: 12px;
+  color: #7a4a58;
+}
+
+/* 삭제 버튼 */
+.delete-btn {
+  width: 32px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #d6c1c9;
+  background-color: #fff;
+  color: #741E37;
+
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  transition: background-color 0.2s ease, transform 0.05s ease;
+}
+
+.delete-btn:hover {
+  background-color: #f6eef1;
+}
+
+.delete-btn:active {
+  transform: scale(0.95);
+}
+
+/* 버튼 영역 */
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.actions button {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* 업로드 버튼 */
+#uploadBtn {
+  background-color: #741E37;
+  color: #ffffff;
+}
+
+#uploadBtn:hover:not(:disabled) {
+  background-color: #5f182d;
+}
+
+#uploadBtn:disabled {
+  background-color: #c8a7b3;
+  cursor: not-allowed;
+}
+
+/* 초기화 버튼 */
+#resetBtn {
+  background-color: #f3f3f3;
+  color: #741E37;
+  border: 1px solid #d6c1c9;
+}
+
+#resetBtn:hover:not(:disabled) {
+  background-color: #f6eef1;
+}
+
+#resetBtn:disabled {
+  color: #bba3ab;
+  border-color: #e5d7dc;
+  cursor: not-allowed;
+}
