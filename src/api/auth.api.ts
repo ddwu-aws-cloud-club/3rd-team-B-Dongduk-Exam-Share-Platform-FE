@@ -53,3 +53,39 @@ export const login = async (email: string, password: string): Promise<LoginRespo
     body: JSON.stringify({ email, password }),
   });
 };
+
+interface ProfileSetupData {
+  email: string;
+  nickname: string;
+  college: string;
+  major: string;
+  profileImage: File | null;
+}
+
+interface ProfileSetupResponse {
+  message: string;
+}
+
+export const setupProfile = async (data: ProfileSetupData): Promise<ProfileSetupResponse> => {
+  const formData = new FormData();
+  formData.append('email', data.email);
+  formData.append('nickname', data.nickname);
+  formData.append('college', data.college);
+  formData.append('major', data.major);
+
+  if (data.profileImage) {
+    formData.append('profileImage', data.profileImage);
+  }
+
+  const response = await fetch('/api/auth/profile-setup', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+    throw new Error(errorData.message || 'Failed to setup profile');
+  }
+
+  return response.json();
+};

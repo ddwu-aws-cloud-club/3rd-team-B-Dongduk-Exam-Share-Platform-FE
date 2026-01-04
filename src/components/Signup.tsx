@@ -6,9 +6,10 @@ import { sendVerificationCode, verifyCode, signup } from '../api/auth.api';
 
 interface SignupProps {
   onSwitchToLogin: () => void;
+  onSignupSuccess: (email: string) => void;
 }
 
-function Signup({ onSwitchToLogin }: SignupProps) {
+function Signup({ onSwitchToLogin, onSignupSuccess }: SignupProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -85,8 +86,8 @@ function Signup({ onSwitchToLogin }: SignupProps) {
 
     try {
       const response = await signup(email, password);
-      alert(response.message);
-      onSwitchToLogin();
+      alert(response.message + ' 프로필을 설정해주세요!');
+      onSignupSuccess(email);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : '회원가입 중 오류가 발생했습니다.';
