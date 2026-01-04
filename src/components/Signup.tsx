@@ -30,7 +30,7 @@ function Signup({ onSwitchToLogin }: SignupProps) {
     try {
       const response = await sendVerificationCode(email);
       setIsVerificationSent(true);
-      alert(response.message + ' 콘솔 로그를 확인하세요!');
+      alert(response.message + ' 이메일을 확인하세요!');
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : '인증 코드 전송 중 오류가 발생했습니다.';
