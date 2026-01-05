@@ -68,8 +68,8 @@ function ProfileSetup({ email, onProfileComplete }: ProfileSetupProps) {
       return;
     }
 
-    if (nickname.length < 2 || nickname.length > 20) {
-      setError('닉네임은 2자 이상 20자 이하로 입력해주세요.');
+    if (nickname.length < 3 || nickname.length > 10) {
+      setError('닉네임은 3자 이상 10자 이하로 입력해주세요.');
       return;
     }
 
@@ -105,11 +105,6 @@ function ProfileSetup({ email, onProfileComplete }: ProfileSetupProps) {
     }
   };
 
-  const handleSkip = () => {
-    if (window.confirm('프로필 설정을 건너뛰시겠습니까? 나중에 마이페이지에서 설정할 수 있습니다.')) {
-      onProfileComplete();
-    }
-  };
 
   return (
     <div className="profile-setup-container">
@@ -165,10 +160,10 @@ function ProfileSetup({ email, onProfileComplete }: ProfileSetupProps) {
             <input
               type="text"
               id="nickname"
-              placeholder="닉네임을 입력하세요 (2-20자)"
+              placeholder="닉네임을 입력하세요 (3-10자)"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              maxLength={20}
+              maxLength={10}
               required
             />
           </div>
@@ -215,10 +210,6 @@ function ProfileSetup({ email, onProfileComplete }: ProfileSetupProps) {
 
           <button type="submit" className="submit-button" disabled={loading}>
             {loading ? '저장 중...' : '완료'}
-          </button>
-
-          <button type="button" onClick={handleSkip} className="skip-button" disabled={loading}>
-            나중에 하기
           </button>
         </form>
       </div>

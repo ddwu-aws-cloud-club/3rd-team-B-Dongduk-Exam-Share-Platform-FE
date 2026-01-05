@@ -53,7 +53,9 @@ export const COLLEGES: College[] = [
   },
   {
     name: '약학대학',
-    majors: [],
+    majors: [
+      { value: 'pharmacy', label: '약학전공' },
+    ],
   },
   {
     name: '예술대학',
