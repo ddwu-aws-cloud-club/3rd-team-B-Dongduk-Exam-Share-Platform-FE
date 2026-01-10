@@ -1,6 +1,5 @@
 ﻿import { useMemo, useRef, useState, type DragEvent } from "react";
-import { uploadFile, type UploadResult } from "./api/file.api";
-import { API_BASE } from "./api/client";
+import { uploadFile, type UploadResult } from "../api/file.api";
 
 export default function PdfDropzone() {
   const [isDragging, setIsDragging] = useState(false);
@@ -140,8 +139,7 @@ export default function PdfDropzone() {
             크기: {result.size} bytes
             <br />
             링크:{" "}
-            <a href={`${API_BASE}${result.url}`} target="_blank" rel="noreferrer">
-              {API_BASE}
+            <a href={result.url} target="_blank" rel="noreferrer">
               {result.url}
             </a>
           </div>
