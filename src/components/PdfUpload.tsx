@@ -1,6 +1,5 @@
-import { useState, useRef, useMemo, type DragEvent } from 'react';
-import { uploadFile, type UploadResult } from '../api/file.api';
-import { API_BASE } from '../api/client';
+import { useState, useRef, type DragEvent } from 'react';
+import { uploadPost, type PostUploadResponse } from '../api/file.api';
 import { getAllMajors } from '../constants/majors';
 import './PdfUpload.css';
 
@@ -12,7 +11,7 @@ function PdfUpload({ onNavigateToBoard }: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>('');
-  const [result, setResult] = useState<UploadResult | null>(null);
+  const [result, setResult] = useState<PostUploadResponse | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -22,11 +21,6 @@ function PdfUpload({ onNavigateToBoard }: PdfUploadProps) {
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const allMajors = getAllMajors();
-
-  const fileInfo = useMemo(() => {
-    if (!file) return null;
-    return `${file.name} (${Math.round(file.size / 1024)} KB)`;
-  }, [file]);
 
   const validatePdf = (f: File) => {
     const nameOk = f.name.toLowerCase().endsWith('.pdf');
@@ -90,9 +84,15 @@ function PdfUpload({ onNavigateToBoard }: PdfUploadProps) {
     setResult(null);
 
     try {
-      const data = await uploadFile(file);
+      const data = await uploadPost({
+        file,
+        title: title.trim(),
+        subject: subject.trim(),
+        professor: professor.trim(),
+        major: major,
+      });
       setResult(data);
-      alert('족보가 성공적으로 업로드되었습니다! 100P가 적립되었습니다.');
+      alert(data.message);
 
       setFile(null);
       setTitle('');
@@ -258,7 +258,7 @@ function PdfUpload({ onNavigateToBoard }: PdfUploadProps) {
           {result && (
             <div className="success-message">
               <p className="success-title">✓ 업로드 성공!</p>
-              <p className="success-detail">100P가 적립되었습니다.</p>
+              <p className="success-detail">{result.earnedPoints}P가 적립되었습니다.</p>
             </div>
           )}
 
