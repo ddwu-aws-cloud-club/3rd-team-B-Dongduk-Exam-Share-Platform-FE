@@ -3,6 +3,7 @@ import logo from '../assets/somshare_logo.png';
 import character from '../assets/somshare_character.png';
 import './Login.css';
 import { login } from '../api/auth.api';
+import { saveToken, saveUserEmail } from '../utils/auth';
 
 interface LoginProps {
   onSwitchToSignup: () => void;
@@ -24,9 +25,10 @@ function Login({ onSwitchToSignup, onLoginSuccess }: LoginProps) {
     try {
       const data = await login(email, password);
 
-      // 로그인 성공 시 토큰 저장 (필요한 경우)
+      // 로그인 성공 시 토큰 저장
       if (data.token) {
-        localStorage.setItem('authToken', data.token);
+        saveToken(data.token);
+        saveUserEmail(email);
       }
 
       // 성공 콜백 호출
