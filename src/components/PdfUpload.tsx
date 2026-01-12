@@ -1,6 +1,7 @@
 import { useState, useRef, type DragEvent } from 'react';
 import { uploadPost, type PostUploadResponse } from '../api/file.api';
 import { getAllMajors } from '../constants/majors';
+import PageHeader from './PageHeader';
 import './PdfUpload.css';
 
 interface PdfUploadProps {
@@ -110,14 +111,11 @@ function PdfUpload({ onNavigateToBoard }: PdfUploadProps) {
 
   return (
     <div className="pdf-upload-container">
-      <header className="upload-header">
-        <div className="header-content">
-          <h1 className="upload-title">족보 업로드</h1>
-          <button onClick={onNavigateToBoard} className="nav-button">
-            게시판으로
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        pageTitle="족보 업로드"
+        onLogoClick={onNavigateToBoard}
+        onBackClick={onNavigateToBoard}
+      />
 
       <main className="upload-main">
         <div className="upload-card">

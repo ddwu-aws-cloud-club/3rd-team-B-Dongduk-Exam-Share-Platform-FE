@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PageHeader from './PageHeader';
 import './MyPage.css';
 
 interface UserInfo {
@@ -74,14 +75,11 @@ function MyPage({ onNavigateToHome }: MyPageProps) {
 
   return (
     <div className="mypage-container">
-      <header className="mypage-header">
-        <div className="header-content">
-          <h1 className="mypage-title">마이페이지</h1>
-          <button onClick={onNavigateToHome} className="nav-button">
-            홈으로
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        pageTitle="마이페이지"
+        onLogoClick={onNavigateToHome}
+        onBackClick={onNavigateToHome}
+      />
 
       <main className="mypage-main">
         <section className="profile-section">

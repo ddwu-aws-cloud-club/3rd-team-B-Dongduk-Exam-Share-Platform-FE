@@ -14,6 +14,7 @@ type Page = "login" | "signup" | "profile-setup" | "home" | "board" | "mypage" |
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("login");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [selectedCollege, setSelectedCollege] = useState<string | null>(null);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -43,12 +44,16 @@ export default function App() {
         />
       ) : currentPage === "home" ? (
         <Home
-          onNavigateToBoard={(major?: string) => setCurrentPage("board")}
+          onNavigateToBoard={(collegeName?: string) => {
+            setSelectedCollege(collegeName || null);
+            setCurrentPage("board");
+          }}
           onNavigateToMyPage={() => setCurrentPage("mypage")}
           onLogout={handleLogout}
         />
       ) : currentPage === "board" ? (
         <Board
+          selectedCollege={selectedCollege}
           onNavigateToHome={() => setCurrentPage("home")}
           onUploadClick={() => setCurrentPage("upload")}
         />

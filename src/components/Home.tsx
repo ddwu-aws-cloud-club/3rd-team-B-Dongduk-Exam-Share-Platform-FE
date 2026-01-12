@@ -3,7 +3,7 @@ import { COLLEGES } from '../constants/majors';
 import './Home.css';
 
 interface HomeProps {
-  onNavigateToBoard: (major?: string) => void;
+  onNavigateToBoard: (collegeName?: string) => void;
   onNavigateToMyPage: () => void;
   onLogout: () => void;
 }
@@ -53,7 +53,7 @@ function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
               <div
                 key={college.name}
                 className="college-card"
-                onClick={() => onNavigateToBoard()}
+                onClick={() => onNavigateToBoard(college.name)}
               >
                 <h4 className="college-name">{college.name}</h4>
                 <p className="college-majors-count">
@@ -78,10 +78,10 @@ function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
             </button>
             <button
               className="quick-action-button"
-              onClick={() => onNavigateToBoard()}
+              onClick={() => onNavigateToBoard('ARETE 교양대학')}
             >
-              <div className="action-icon">📤</div>
-              <div className="action-label">족보 업로드</div>
+              <div className="action-icon">📖</div>
+              <div className="action-label">교양 게시판</div>
             </button>
             <button
               className="quick-action-button"
