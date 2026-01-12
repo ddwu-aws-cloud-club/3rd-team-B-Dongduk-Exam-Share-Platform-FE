@@ -3,7 +3,7 @@ import { COLLEGES } from '../constants/majors';
 import './Home.css';
 
 interface HomeProps {
-  onNavigateToBoard: (major?: string) => void;
+  onNavigateToBoard: (collegeName?: string) => void;
   onNavigateToMyPage: () => void;
   onLogout: () => void;
 }
@@ -53,7 +53,7 @@ function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
               <div
                 key={college.name}
                 className="college-card"
-                onClick={() => onNavigateToBoard()}
+                onClick={() => onNavigateToBoard(college.name)}
               >
                 <h4 className="college-name">{college.name}</h4>
                 <p className="college-majors-count">
@@ -67,28 +67,21 @@ function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
         </section>
 
         <section className="quick-actions-section">
-          <h3 className="section-title">빠른 메뉴</h3>
+          <h3 className="section-title">기타</h3>
           <div className="quick-actions">
+            <button
+              className="quick-action-button"
+              onClick={() => onNavigateToBoard('ARETE 교양대학')}
+            >
+              <div className="action-icon">📖</div>
+              <div className="action-label">교양 게시판</div>
+            </button>
             <button
               className="quick-action-button"
               onClick={() => onNavigateToBoard()}
             >
               <div className="action-icon">📚</div>
               <div className="action-label">전체 족보 보기</div>
-            </button>
-            <button
-              className="quick-action-button"
-              onClick={() => onNavigateToBoard()}
-            >
-              <div className="action-icon">📤</div>
-              <div className="action-label">족보 업로드</div>
-            </button>
-            <button
-              className="quick-action-button"
-              onClick={onNavigateToMyPage}
-            >
-              <div className="action-icon">👤</div>
-              <div className="action-label">내 활동</div>
             </button>
           </div>
         </section>

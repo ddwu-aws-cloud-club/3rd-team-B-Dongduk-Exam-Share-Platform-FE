@@ -14,6 +14,8 @@ type Page = "login" | "signup" | "profile-setup" | "home" | "board" | "mypage" |
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("login");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [selectedCollege, setSelectedCollege] = useState<string | null>(null);
+  const [userPoints, setUserPoints] = useState<number>(1000); // TODO: API에서 가져오기
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -43,22 +45,35 @@ export default function App() {
         />
       ) : currentPage === "home" ? (
         <Home
-          onNavigateToBoard={(major?: string) => setCurrentPage("board")}
+          onNavigateToBoard={(collegeName?: string) => {
+            setSelectedCollege(collegeName || null);
+            setCurrentPage("board");
+          }}
           onNavigateToMyPage={() => setCurrentPage("mypage")}
           onLogout={handleLogout}
         />
       ) : currentPage === "board" ? (
         <Board
+          selectedCollege={selectedCollege}
           onNavigateToHome={() => setCurrentPage("home")}
           onUploadClick={() => setCurrentPage("upload")}
+          onLogout={handleLogout}
+          onMyPageClick={() => setCurrentPage("mypage")}
+          userPoints={userPoints}
         />
       ) : currentPage === "mypage" ? (
         <MyPage
           onNavigateToHome={() => setCurrentPage("home")}
+          onLogout={handleLogout}
+          userPoints={userPoints}
         />
       ) : currentPage === "upload" ? (
         <PdfUpload
           onNavigateToBoard={() => setCurrentPage("board")}
+          onNavigateToHome={() => setCurrentPage("home")}
+          onLogout={handleLogout}
+          onMyPageClick={() => setCurrentPage("mypage")}
+          userPoints={userPoints}
         />
       ) : null}
     </div>

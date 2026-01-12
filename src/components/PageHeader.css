@@ -1,0 +1,211 @@
+.page-header {
+  background: white;
+  padding: 2.5rem 3rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  min-height: 260px;
+}
+
+.page-header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* 왼쪽 위 - 뒤로가기 */
+.page-header-top-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.back-button {
+  padding: 0.7rem 1.5rem;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* 오른쪽 위 - 포인트, 마이페이지, 로그아웃 */
+.page-header-top-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.header-points {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+}
+
+.points-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.2rem;
+}
+
+.points-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+}
+
+.header-button {
+  padding: 0.7rem 1.3rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mypage-button {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.mypage-button:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.logout-button {
+  background: #f44336;
+  color: white;
+}
+
+.logout-button:hover {
+  background: #d32f2f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
+
+/* 중앙 - 로고와 화면 이름 */
+.page-header-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.logo-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.logo-button:hover {
+  transform: scale(1.05);
+}
+
+.page-logo {
+  height: 140px;
+  display: block;
+}
+
+.page-header-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  text-align: center;
+}
+
+.upload-button-header {
+  margin-top: 0.8rem;
+  padding: 1rem 2.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.upload-button-header:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+@media (max-width: 968px) {
+  .page-header {
+    padding: 2rem 1.5rem;
+    min-height: 220px;
+  }
+
+  .page-header-content {
+    gap: 1rem;
+  }
+
+  .page-header-top-left {
+    position: static;
+    width: 100%;
+  }
+
+  .page-header-top-right {
+    position: static;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .page-header-center {
+    margin-top: 0.5rem;
+  }
+
+  .page-logo {
+    height: 100px;
+  }
+
+  .page-header-title {
+    font-size: 1.1rem;
+  }
+
+  .header-points {
+    padding: 0.5rem 1rem;
+  }
+
+  .points-value {
+    font-size: 1rem;
+  }
+
+  .header-button {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .upload-button-header {
+    padding: 0.9rem 2rem;
+    font-size: 1rem;
+  }
+}

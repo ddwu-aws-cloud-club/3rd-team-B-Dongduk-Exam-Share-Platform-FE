@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { COLLEGES, getAllMajors } from '../constants/majors';
+import PageHeader from './PageHeader';
 import './Board.css';
 
 interface Post {
@@ -13,17 +14,25 @@ interface Post {
   downloadCount: number;
   points: number;
   pdfUrl?: string;
+  likeCount: number;
+  dislikeCount: number;
 }
 
 interface BoardProps {
+  selectedCollege: string | null;
   onNavigateToHome: () => void;
   onUploadClick: () => void;
+  onLogout: () => void;
+  onMyPageClick: () => void;
+  userPoints: number;
 }
 
-function Board({ onNavigateToHome, onUploadClick }: BoardProps) {
+function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints }: BoardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('all');
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [downloadedPosts, setDownloadedPosts] = useState<Set<number>>(new Set());
+  const [ratings, setRatings] = useState<Map<number, 'like' | 'dislike'>>(new Map());
 
   const mockPosts: Post[] = [
     {
@@ -36,6 +45,8 @@ function Board({ onNavigateToHome, onUploadClick }: BoardProps) {
       uploader: '익명',
       downloadCount: 45,
       points: 50,
+      likeCount: 32,
+      dislikeCount: 3,
     },
     {
       id: 2,
@@ -47,6 +58,8 @@ function Board({ onNavigateToHome, onUploadClick }: BoardProps) {
       uploader: '익명',
       downloadCount: 78,
       points: 50,
+      likeCount: 56,
+      dislikeCount: 8,
     },
     {
       id: 3,
@@ -58,10 +71,17 @@ function Board({ onNavigateToHome, onUploadClick }: BoardProps) {
       uploader: '익명',
       downloadCount: 32,
       points: 50,
+      likeCount: 24,
+      dislikeCount: 2,
     },
   ];
 
   const allMajors = getAllMajors();
+
+  // 선택된 단과대학의 전공만 가져오기
+  const availableMajors = selectedCollege
+    ? COLLEGES.find((c) => c.name === selectedCollege)?.majors || []
+    : allMajors;
 
   const filteredPosts = mockPosts.filter((post) => {
     const matchesSearch =
@@ -75,24 +95,49 @@ function Board({ onNavigateToHome, onUploadClick }: BoardProps) {
   });
 
   const handleDownload = (post: Post) => {
+    if (downloadedPosts.has(post.id)) {
+      return; // 이미 다운로드한 경우 무시
+    }
     alert(`"${post.title}" 다운로드! (${post.points}P 차감)`);
+    setDownloadedPosts((prev) => new Set(prev).add(post.id));
+  };
+
+  const handleRating = (postId: number, type: 'like' | 'dislike') => {
+    if (!downloadedPosts.has(postId)) {
+      alert('다운로드 후에 평가할 수 있습니다.');
+      return;
+    }
+
+    const currentRating = ratings.get(postId);
+    if (currentRating === type) {
+      // 이미 같은 평가를 한 경우 취소
+      setRatings((prev) => {
+        const newRatings = new Map(prev);
+        newRatings.delete(postId);
+        return newRatings;
+      });
+    } else {
+      // 새로운 평가 또는 다른 평가로 변경
+      setRatings((prev) => {
+        const newRatings = new Map(prev);
+        newRatings.set(postId, type);
+        return newRatings;
+      });
+    }
   };
 
   return (
     <div className="board-container">
-      <header className="board-header">
-        <div className="header-content">
-          <h1 className="board-title">족보 게시판</h1>
-          <div className="header-actions">
-            <button onClick={onNavigateToHome} className="nav-button">
-              홈으로
-            </button>
-            <button onClick={onUploadClick} className="upload-button">
-              + 족보 업로드
-            </button>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        pageTitle={selectedCollege ? `${selectedCollege} 족보 게시판` : '전체 족보 게시판'}
+        onLogoClick={onNavigateToHome}
+        onBackClick={onNavigateToHome}
+        onLogout={onLogout}
+        onMyPageClick={onMyPageClick}
+        userPoints={userPoints}
+        showUploadButton={true}
+        onUploadClick={onUploadClick}
+      />
 
       <main className="board-main">
         <div className="filters-section">
@@ -116,14 +161,14 @@ function Board({ onNavigateToHome, onUploadClick }: BoardProps) {
               onChange={(e) => setSelectedMajor(e.target.value)}
               className="major-select"
             >
-              <option value="all">전체 전공</option>
-              {COLLEGES.map((college) =>
-                college.majors.map((major) => (
-                  <option key={major.value} value={major.value}>
-                    {college.name} - {major.label}
-                  </option>
-                ))
-              )}
+              <option value="all">
+                {selectedCollege ? `${selectedCollege} 전체` : '전체 전공'}
+              </option>
+              {availableMajors.map((major) => (
+                <option key={major.value} value={major.value}>
+                  {major.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -177,12 +222,44 @@ function Board({ onNavigateToHome, onUploadClick }: BoardProps) {
                     </span>
                   </div>
 
+                  {/* 좋아요/별로에요 숫자 표시 (항상) */}
+                  <div className="rating-stats">
+                    <span className="stat-item">
+                      👍 좋아요 {post.likeCount}
+                    </span>
+                    <span className="stat-item">
+                      👎 별로예요 {post.dislikeCount}
+                    </span>
+                  </div>
+
                   <button
                     onClick={() => handleDownload(post)}
-                    className="download-button"
+                    disabled={downloadedPosts.has(post.id)}
+                    className={`download-button ${downloadedPosts.has(post.id) ? 'downloaded' : ''}`}
                   >
-                    다운로드 ({post.points}P)
+                    {downloadedPosts.has(post.id) ? '다운로드 완료' : `다운로드 (${post.points}P)`}
                   </button>
+
+                  {/* 평가 버튼 (다운로드 후에만) */}
+                  {downloadedPosts.has(post.id) && (
+                    <div className="rating-section">
+                      <p className="rating-label">이 족보가 도움이 되었나요?</p>
+                      <div className="rating-buttons">
+                        <button
+                          onClick={() => handleRating(post.id, 'like')}
+                          className={`rating-button like ${ratings.get(post.id) === 'like' ? 'active' : ''}`}
+                        >
+                          👍 좋아요
+                        </button>
+                        <button
+                          onClick={() => handleRating(post.id, 'dislike')}
+                          className={`rating-button dislike ${ratings.get(post.id) === 'dislike' ? 'active' : ''}`}
+                        >
+                          👎 별로예요
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

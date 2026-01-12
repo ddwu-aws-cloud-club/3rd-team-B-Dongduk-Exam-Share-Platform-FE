@@ -1,13 +1,18 @@
 import { useState, useRef, type DragEvent } from 'react';
 import { uploadPost, type PostUploadResponse } from '../api/file.api';
 import { getAllMajors } from '../constants/majors';
+import PageHeader from './PageHeader';
 import './PdfUpload.css';
 
 interface PdfUploadProps {
   onNavigateToBoard: () => void;
+  onNavigateToHome: () => void;
+  onLogout: () => void;
+  onMyPageClick: () => void;
+  userPoints: number;
 }
 
-function PdfUpload({ onNavigateToBoard }: PdfUploadProps) {
+function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClick, userPoints }: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>('');
@@ -110,14 +115,14 @@ function PdfUpload({ onNavigateToBoard }: PdfUploadProps) {
 
   return (
     <div className="pdf-upload-container">
-      <header className="upload-header">
-        <div className="header-content">
-          <h1 className="upload-title">족보 업로드</h1>
-          <button onClick={onNavigateToBoard} className="nav-button">
-            게시판으로
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        pageTitle="족보 업로드"
+        onLogoClick={onNavigateToHome}
+        onBackClick={onNavigateToBoard}
+        onLogout={onLogout}
+        onMyPageClick={onMyPageClick}
+        userPoints={userPoints}
+      />
 
       <main className="upload-main">
         <div className="upload-card">

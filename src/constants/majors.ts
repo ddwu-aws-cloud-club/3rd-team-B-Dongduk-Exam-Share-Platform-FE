@@ -27,7 +27,6 @@ export const COLLEGES: College[] = [
   {
     name: '사회과학대학',
     majors: [
-      { value: 'business-admin', label: '경영학전공' },
       { value: 'international-business', label: '국제경영학전공' },
       { value: 'economics', label: '경제학전공' },
       { value: 'library-info', label: '문헌정보학전공' },
@@ -37,7 +36,9 @@ export const COLLEGES: College[] = [
   },
   {
     name: '경영대학',
-    majors: [],
+    majors: [
+      { value: 'business-admin', label: '경영학전공' },
+    ],
   },
   {
     name: '자연정보과학대학',

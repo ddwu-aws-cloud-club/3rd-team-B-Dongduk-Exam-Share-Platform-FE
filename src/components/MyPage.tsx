@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PageHeader from './PageHeader';
 import './MyPage.css';
 
 interface UserInfo {
@@ -19,9 +20,11 @@ interface Activity {
 
 interface MyPageProps {
   onNavigateToHome: () => void;
+  onLogout: () => void;
+  userPoints: number;
 }
 
-function MyPage({ onNavigateToHome }: MyPageProps) {
+function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
   const [activeTab, setActiveTab] = useState<'info' | 'uploads' | 'downloads'>(
     'info'
   );
@@ -74,14 +77,13 @@ function MyPage({ onNavigateToHome }: MyPageProps) {
 
   return (
     <div className="mypage-container">
-      <header className="mypage-header">
-        <div className="header-content">
-          <h1 className="mypage-title">마이페이지</h1>
-          <button onClick={onNavigateToHome} className="nav-button">
-            홈으로
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        pageTitle="마이페이지"
+        onLogoClick={onNavigateToHome}
+        onBackClick={onNavigateToHome}
+        onLogout={onLogout}
+        userPoints={userPoints}
+      />
 
       <main className="mypage-main">
         <section className="profile-section">
