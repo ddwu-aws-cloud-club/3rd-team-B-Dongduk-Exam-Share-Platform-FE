@@ -22,9 +22,12 @@ interface BoardProps {
   selectedCollege: string | null;
   onNavigateToHome: () => void;
   onUploadClick: () => void;
+  onLogout: () => void;
+  onMyPageClick: () => void;
+  userPoints: number;
 }
 
-function Board({ selectedCollege, onNavigateToHome, onUploadClick }: BoardProps) {
+function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints }: BoardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('all');
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -129,11 +132,11 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick }: BoardProps)
         pageTitle={selectedCollege ? `${selectedCollege} 족보 게시판` : '전체 족보 게시판'}
         onLogoClick={onNavigateToHome}
         onBackClick={onNavigateToHome}
-        rightActions={
-          <button onClick={onUploadClick} className="upload-button">
-            + 족보 업로드
-          </button>
-        }
+        onLogout={onLogout}
+        onMyPageClick={onMyPageClick}
+        userPoints={userPoints}
+        showUploadButton={true}
+        onUploadClick={onUploadClick}
       />
 
       <main className="board-main">
@@ -219,6 +222,16 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick }: BoardProps)
                     </span>
                   </div>
 
+                  {/* 좋아요/별로에요 숫자 표시 (항상) */}
+                  <div className="rating-stats">
+                    <span className="stat-item">
+                      👍 좋아요 {post.likeCount}
+                    </span>
+                    <span className="stat-item">
+                      👎 별로예요 {post.dislikeCount}
+                    </span>
+                  </div>
+
                   <button
                     onClick={() => handleDownload(post)}
                     disabled={downloadedPosts.has(post.id)}
@@ -227,6 +240,7 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick }: BoardProps)
                     {downloadedPosts.has(post.id) ? '다운로드 완료' : `다운로드 (${post.points}P)`}
                   </button>
 
+                  {/* 평가 버튼 (다운로드 후에만) */}
                   {downloadedPosts.has(post.id) && (
                     <div className="rating-section">
                       <p className="rating-label">이 족보가 도움이 되었나요?</p>
@@ -235,13 +249,13 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick }: BoardProps)
                           onClick={() => handleRating(post.id, 'like')}
                           className={`rating-button like ${ratings.get(post.id) === 'like' ? 'active' : ''}`}
                         >
-                          👍 좋아요 ({post.likeCount})
+                          👍 좋아요
                         </button>
                         <button
                           onClick={() => handleRating(post.id, 'dislike')}
                           className={`rating-button dislike ${ratings.get(post.id) === 'dislike' ? 'active' : ''}`}
                         >
-                          👎 별로예요 ({post.dislikeCount})
+                          👎 별로예요
                         </button>
                       </div>
                     </div>

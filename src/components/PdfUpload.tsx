@@ -6,9 +6,13 @@ import './PdfUpload.css';
 
 interface PdfUploadProps {
   onNavigateToBoard: () => void;
+  onNavigateToHome: () => void;
+  onLogout: () => void;
+  onMyPageClick: () => void;
+  userPoints: number;
 }
 
-function PdfUpload({ onNavigateToBoard }: PdfUploadProps) {
+function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClick, userPoints }: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>('');
@@ -113,8 +117,11 @@ function PdfUpload({ onNavigateToBoard }: PdfUploadProps) {
     <div className="pdf-upload-container">
       <PageHeader
         pageTitle="족보 업로드"
-        onLogoClick={onNavigateToBoard}
+        onLogoClick={onNavigateToHome}
         onBackClick={onNavigateToBoard}
+        onLogout={onLogout}
+        onMyPageClick={onMyPageClick}
+        userPoints={userPoints}
       />
 
       <main className="upload-main">

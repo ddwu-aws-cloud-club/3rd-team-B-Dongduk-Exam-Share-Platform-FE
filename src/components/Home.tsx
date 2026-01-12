@@ -67,15 +67,8 @@ function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
         </section>
 
         <section className="quick-actions-section">
-          <h3 className="section-title">빠른 메뉴</h3>
+          <h3 className="section-title">기타</h3>
           <div className="quick-actions">
-            <button
-              className="quick-action-button"
-              onClick={() => onNavigateToBoard()}
-            >
-              <div className="action-icon">📚</div>
-              <div className="action-label">전체 족보 보기</div>
-            </button>
             <button
               className="quick-action-button"
               onClick={() => onNavigateToBoard('ARETE 교양대학')}
@@ -85,10 +78,10 @@ function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
             </button>
             <button
               className="quick-action-button"
-              onClick={onNavigateToMyPage}
+              onClick={() => onNavigateToBoard()}
             >
-              <div className="action-icon">👤</div>
-              <div className="action-label">내 활동</div>
+              <div className="action-icon">📚</div>
+              <div className="action-label">전체 족보 보기</div>
             </button>
           </div>
         </section>

@@ -20,9 +20,11 @@ interface Activity {
 
 interface MyPageProps {
   onNavigateToHome: () => void;
+  onLogout: () => void;
+  userPoints: number;
 }
 
-function MyPage({ onNavigateToHome }: MyPageProps) {
+function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
   const [activeTab, setActiveTab] = useState<'info' | 'uploads' | 'downloads'>(
     'info'
   );
@@ -79,6 +81,8 @@ function MyPage({ onNavigateToHome }: MyPageProps) {
         pageTitle="마이페이지"
         onLogoClick={onNavigateToHome}
         onBackClick={onNavigateToHome}
+        onLogout={onLogout}
+        userPoints={userPoints}
       />
 
       <main className="mypage-main">
