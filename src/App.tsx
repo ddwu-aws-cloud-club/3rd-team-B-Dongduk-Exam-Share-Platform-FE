@@ -17,6 +17,14 @@ export default function App() {
   const [selectedCollege, setSelectedCollege] = useState<string | null>(null);
   const [userPoints, setUserPoints] = useState<number>(1000); // TODO: API에서 가져오기
 
+  const handlePointsUpdate = (points: number) => {
+    setUserPoints(points);
+  };
+
+  const handlePointsAdd = (earnedPoints: number) => {
+    setUserPoints((prev) => prev + earnedPoints);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userName');
@@ -60,6 +68,7 @@ export default function App() {
           onLogout={handleLogout}
           onMyPageClick={() => setCurrentPage("mypage")}
           userPoints={userPoints}
+          onPointsUpdate={handlePointsUpdate}
         />
       ) : currentPage === "mypage" ? (
         <MyPage
@@ -74,6 +83,7 @@ export default function App() {
           onLogout={handleLogout}
           onMyPageClick={() => setCurrentPage("mypage")}
           userPoints={userPoints}
+          onPointsUpdate={handlePointsAdd}
         />
       ) : null}
     </div>
