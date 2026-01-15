@@ -1,6 +1,7 @@
 import { useState, useRef, type DragEvent } from 'react';
 import { uploadPost, type PostUploadResponse } from '../api/file.api';
 import { getAllMajors } from '../constants/majors';
+import { completeUpload } from '../api/point.api';
 import PageHeader from './PageHeader';
 import './PdfUpload.css';
 
@@ -10,10 +11,9 @@ interface PdfUploadProps {
   onLogout: () => void;
   onMyPageClick: () => void;
   userPoints: number;
-  onPointsUpdate?: (earnedPoints: number) => void;
 }
 
-function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClick, userPoints, onPointsUpdate }: PdfUploadProps) {
+function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClick, userPoints }: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>('');
@@ -97,24 +97,33 @@ function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClic
         professor: professor.trim(),
         major: major,
       });
-      setResult(data);
+      // 2. 포인트 적립 시도
+      try {
+        await completeUpload({
+          fileName: file.name,
+          originalName: file.name,
+          fileSize: file.size,
+          description: `[업로드] ${title.trim()}`,
+        });
+        
+        setResult(data);
+        alert(`업로드 완료! 100포인트가 적립되었습니다.`);
 
-      // 포인트 갱신
-      if (onPointsUpdate && data.earnedPoints > 0) {
-        onPointsUpdate(data.earnedPoints);
+        setFile(null);
+        setTitle('');
+        setSubject('');
+        setProfessor('');
+        setMajor('');
+
+      } catch (pointError) {
+        console.error("포인트 적립 에러:", pointError);
+        throw new Error("파일은 업로드되었으나 포인트 적립에 실패했습니다. 잠시 후 다시 시도해주세요.");
       }
-
-      alert(data.message);
-
-      setFile(null);
-      setTitle('');
-      setSubject('');
-      setProfessor('');
-      setMajor('');
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : '업로드 중 오류가 발생했어요.';
       setError(message);
+      setResult(null)
     } finally {
       setUploading(false);
     }
@@ -270,7 +279,7 @@ function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClic
           {result && (
             <div className="success-message">
               <p className="success-title">✓ 업로드 성공!</p>
-              <p className="success-detail">{result.earnedPoints}P가 적립되었습니다.</p>
+              <p className="success-detail">100P가 적립되었습니다.</p>
             </div>
           )}
 
