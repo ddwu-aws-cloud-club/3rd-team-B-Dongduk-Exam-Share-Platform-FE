@@ -13,8 +13,7 @@ import "./App.css";
 type Page = "login" | "signup" | "profile-setup" | "home" | "board" | "mypage" | "upload";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>("home");
-  //const [currentPage, setCurrentPage] = useState<Page>("login");
+  const [currentPage, setCurrentPage] = useState<Page>("login");
   const [userEmail, setUserEmail] = useState<string>("");
   const [selectedCollege, setSelectedCollege] = useState<string | null>(null);
   const [userPoints, setUserPoints] = useState<number>(0); 
