@@ -1,22 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { COLLEGES, getAllMajors } from '../constants/majors';
+import { getPosts, downloadPost } from '../api/file.api';
+import type { PostSummary, DownloadResponse } from '../api/file.api';
 import PageHeader from './PageHeader';
 import './Board.css';
-
-interface Post {
-  id: number;
-  title: string;
-  subject: string;
-  professor: string;
-  major: string;
-  uploadDate: string;
-  uploader: string;
-  downloadCount: number;
-  points: number;
-  pdfUrl?: string;
-  likeCount: number;
-  dislikeCount: number;
-}
 
 interface BoardProps {
   selectedCollege: string | null;
@@ -25,104 +12,80 @@ interface BoardProps {
   onLogout: () => void;
   onMyPageClick: () => void;
   userPoints: number;
+  onPointsUpdate?: (newPoints: number) => void;
 }
 
-function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints }: BoardProps) {
+function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints, onPointsUpdate }: BoardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('all');
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [posts, setPosts] = useState<PostSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [downloadedPosts, setDownloadedPosts] = useState<Set<number>>(new Set());
-  const [ratings, setRatings] = useState<Map<number, 'like' | 'dislike'>>(new Map());
-
-  const mockPosts: Post[] = [
-    {
-      id: 1,
-      title: '2024-2학기 중간고사 족보',
-      subject: '자료구조',
-      professor: '김교수',
-      major: 'computer-science',
-      uploadDate: '2024-10-15',
-      uploader: '익명',
-      downloadCount: 45,
-      points: 50,
-      likeCount: 32,
-      dislikeCount: 3,
-    },
-    {
-      id: 2,
-      title: '2024-1학기 기말고사 족보',
-      subject: '알고리즘',
-      professor: '이교수',
-      major: 'computer-science',
-      uploadDate: '2024-06-20',
-      uploader: '익명',
-      downloadCount: 78,
-      points: 50,
-      likeCount: 56,
-      dislikeCount: 8,
-    },
-    {
-      id: 3,
-      title: '2024-2학기 중간고사',
-      subject: '경영학원론',
-      professor: '박교수',
-      major: 'business-admin',
-      uploadDate: '2024-10-18',
-      uploader: '익명',
-      downloadCount: 32,
-      points: 50,
-      likeCount: 24,
-      dislikeCount: 2,
-    },
-  ];
+  const [isDownloading, setIsDownloading] = useState<number | null>(null);
 
   const allMajors = getAllMajors();
 
-  // 선택된 단과대학의 전공만 가져오기
   const availableMajors = selectedCollege
     ? COLLEGES.find((c) => c.name === selectedCollege)?.majors || []
     : allMajors;
 
-  const filteredPosts = mockPosts.filter((post) => {
-    const matchesSearch =
-      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.professor.toLowerCase().includes(searchTerm.toLowerCase());
+  const fetchPosts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const params: { search?: string; major?: string } = {};
+      if (searchTerm) params.search = searchTerm;
+      if (selectedMajor !== 'all') params.major = selectedMajor;
 
-    const matchesMajor = selectedMajor === 'all' || post.major === selectedMajor;
-
-    return matchesSearch && matchesMajor;
-  });
-
-  const handleDownload = (post: Post) => {
-    if (downloadedPosts.has(post.id)) {
-      return; // 이미 다운로드한 경우 무시
+      const response = await getPosts(params);
+      setPosts(response.content);
+    } catch (error) {
+      console.error('족보 목록 조회 실패:', error);
+      setPosts([]);
+    } finally {
+      setIsLoading(false);
     }
-    alert(`"${post.title}" 다운로드! (${post.points}P 차감)`);
-    setDownloadedPosts((prev) => new Set(prev).add(post.id));
-  };
+  }, [searchTerm, selectedMajor]);
 
-  const handleRating = (postId: number, type: 'like' | 'dislike') => {
-    if (!downloadedPosts.has(postId)) {
-      alert('다운로드 후에 평가할 수 있습니다.');
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  // 검색어 입력 시 debounce 처리
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchPosts();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const handleDownload = async (post: PostSummary) => {
+    if (downloadedPosts.has(post.id) || isDownloading === post.id) {
       return;
     }
 
-    const currentRating = ratings.get(postId);
-    if (currentRating === type) {
-      // 이미 같은 평가를 한 경우 취소
-      setRatings((prev) => {
-        const newRatings = new Map(prev);
-        newRatings.delete(postId);
-        return newRatings;
-      });
-    } else {
-      // 새로운 평가 또는 다른 평가로 변경
-      setRatings((prev) => {
-        const newRatings = new Map(prev);
-        newRatings.set(postId, type);
-        return newRatings;
-      });
+    setIsDownloading(post.id);
+
+    try {
+      const response: DownloadResponse = await downloadPost(post.id);
+
+      window.open(response.pdfUrl, '_blank');
+
+      setDownloadedPosts((prev) => new Set(prev).add(post.id));
+
+      if (response.pointsDeducted > 0 && onPointsUpdate) {
+        onPointsUpdate(response.remainingPoints);
+      }
+
+      // 다운로드 수 갱신
+      fetchPosts();
+
+      alert(response.message);
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '다운로드에 실패했습니다.';
+      alert(errorMessage);
+    } finally {
+      setIsDownloading(null);
     }
   };
 
@@ -176,17 +139,21 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
         <div className="posts-section">
           <div className="posts-header">
             <h2 className="posts-title">
-              총 {filteredPosts.length}개의 족보
+              총 {posts.length}개의 족보
             </h2>
           </div>
 
-          {filteredPosts.length === 0 ? (
+          {isLoading ? (
             <div className="no-posts">
-              <p>검색 결과가 없습니다.</p>
+              <p>로딩 중...</p>
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="no-posts">
+              <p>등록된 족보가 없습니다.</p>
             </div>
           ) : (
             <div className="posts-list">
-              {filteredPosts.map((post) => (
+              {posts.map((post) => (
                 <div key={post.id} className="post-card">
                   <div className="post-header">
                     <h3 className="post-title">{post.title}</h3>
@@ -205,10 +172,7 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
                     <div className="info-row">
                       <span className="info-label">전공</span>
                       <span className="info-value">
-                        {
-                          allMajors.find((m) => m.value === post.major)
-                            ?.label
-                        }
+                        {allMajors.find((m) => m.value === post.major)?.label || post.major}
                       </span>
                     </div>
                   </div>
@@ -220,46 +184,22 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
                     <span className="meta-item">
                       다운로드: {post.downloadCount}회
                     </span>
-                  </div>
-
-                  {/* 좋아요/별로에요 숫자 표시 (항상) */}
-                  <div className="rating-stats">
-                    <span className="stat-item">
-                      👍 좋아요 {post.likeCount}
-                    </span>
-                    <span className="stat-item">
-                      👎 별로예요 {post.dislikeCount}
+                    <span className="meta-item">
+                      작성자: {post.uploaderNickname}
                     </span>
                   </div>
 
                   <button
                     onClick={() => handleDownload(post)}
-                    disabled={downloadedPosts.has(post.id)}
-                    className={`download-button ${downloadedPosts.has(post.id) ? 'downloaded' : ''}`}
+                    disabled={downloadedPosts.has(post.id) || isDownloading === post.id}
+                    className={`download-button ${downloadedPosts.has(post.id) ? 'downloaded' : ''} ${isDownloading === post.id ? 'loading' : ''}`}
                   >
-                    {downloadedPosts.has(post.id) ? '다운로드 완료' : `다운로드 (${post.points}P)`}
+                    {isDownloading === post.id
+                      ? '다운로드 중...'
+                      : downloadedPosts.has(post.id)
+                        ? '다운로드 완료'
+                        : `다운로드 (${post.points}P)`}
                   </button>
-
-                  {/* 평가 버튼 (다운로드 후에만) */}
-                  {downloadedPosts.has(post.id) && (
-                    <div className="rating-section">
-                      <p className="rating-label">이 족보가 도움이 되었나요?</p>
-                      <div className="rating-buttons">
-                        <button
-                          onClick={() => handleRating(post.id, 'like')}
-                          className={`rating-button like ${ratings.get(post.id) === 'like' ? 'active' : ''}`}
-                        >
-                          👍 좋아요
-                        </button>
-                        <button
-                          onClick={() => handleRating(post.id, 'dislike')}
-                          className={`rating-button dislike ${ratings.get(post.id) === 'dislike' ? 'active' : ''}`}
-                        >
-                          👎 별로예요
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

@@ -10,9 +10,10 @@ interface PdfUploadProps {
   onLogout: () => void;
   onMyPageClick: () => void;
   userPoints: number;
+  onPointsUpdate?: (earnedPoints: number) => void;
 }
 
-function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClick, userPoints }: PdfUploadProps) {
+function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClick, userPoints, onPointsUpdate }: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>('');
@@ -97,6 +98,12 @@ function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClic
         major: major,
       });
       setResult(data);
+
+      // 포인트 갱신
+      if (onPointsUpdate && data.earnedPoints > 0) {
+        onPointsUpdate(data.earnedPoints);
+      }
+
       alert(data.message);
 
       setFile(null);
