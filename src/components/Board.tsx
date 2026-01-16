@@ -36,7 +36,7 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
       if (searchTerm) params.search = searchTerm;
       if (selectedMajor !== 'all') params.major = selectedMajor;
 
-      const response = await getPosts(params);
+      const response = await getPosts({ ...params, college: selectedCollege ?? undefined });
       setPosts(response.content);
     } catch (error) {
       console.error('족보 목록 조회 실패:', error);
@@ -44,7 +44,7 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, selectedMajor]);
+  }, [searchTerm, selectedMajor, selectedCollege]);
 
   useEffect(() => {
     fetchPosts();
@@ -56,7 +56,7 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
       fetchPosts();
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, fetchPosts]);
 
   const handleDownload = async (post: PostSummary) => {
     if (downloadedPosts.has(post.id) || isDownloading === post.id) {
@@ -80,7 +80,6 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
       fetchPosts();
 
       alert(response.message);
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '다운로드에 실패했습니다.';
       alert(errorMessage);
@@ -138,9 +137,7 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
 
         <div className="posts-section">
           <div className="posts-header">
-            <h2 className="posts-title">
-              총 {posts.length}개의 족보
-            </h2>
+            <h2 className="posts-title">총 {posts.length}개의 족보</h2>
           </div>
 
           {isLoading ? (
@@ -178,21 +175,17 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
                   </div>
 
                   <div className="post-meta">
-                    <span className="meta-item">
-                      업로드: {post.uploadDate}
-                    </span>
-                    <span className="meta-item">
-                      다운로드: {post.downloadCount}회
-                    </span>
-                    <span className="meta-item">
-                      작성자: {post.uploaderNickname}
-                    </span>
+                    <span className="meta-item">업로드: {post.uploadDate}</span>
+                    <span className="meta-item">다운로드: {post.downloadCount}회</span>
+                    <span className="meta-item">작성자: 익명</span>
                   </div>
 
                   <button
                     onClick={() => handleDownload(post)}
                     disabled={downloadedPosts.has(post.id) || isDownloading === post.id}
-                    className={`download-button ${downloadedPosts.has(post.id) ? 'downloaded' : ''} ${isDownloading === post.id ? 'loading' : ''}`}
+                    className={`download-button ${downloadedPosts.has(post.id) ? 'downloaded' : ''} ${
+                      isDownloading === post.id ? 'loading' : ''
+                    }`}
                   >
                     {isDownloading === post.id
                       ? '다운로드 중...'

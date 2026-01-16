@@ -1,5 +1,12 @@
 import { API_BASE } from './client';
 import { getToken } from '../utils/auth';
+import { COLLEGES } from '../constants/majors';
+
+
+const COLLEGE_TO_MAJORS: Record<string, string[]> = Object.fromEntries(
+  COLLEGES.map((c) => [c.name, c.majors.map((m) => m.value)])
+) as Record<string, string[]>;
+
 
 export interface PostUploadParams {
   file: File;
@@ -40,12 +47,28 @@ export interface PostListResponse {
   currentPage: number;
 }
 
-export const getPosts = async (params?: {
+
+function mapPostSummary(p: any): PostSummary {
+  return {
+    id: p.id,
+    title: p.title ?? '',
+    subject: p.subject ?? '',
+    professor: p.professor ?? '',
+    major: p.major ?? 'unknown',
+    uploadDate: (p.uploadDate ?? p.createdAt ?? '').toString().slice(0, 10),
+    uploaderNickname: p.uploaderNickname ?? p.uploaderName ?? '익명',
+    downloadCount: p.downloadCount ?? 0,
+    points: p.points ?? 0,
+  };
+}
+
+
+async function fetchAllPostsFromApiPosts(params?: {
   search?: string;
   major?: string;
   page?: number;
   size?: number;
-}): Promise<PostListResponse> => {
+}): Promise<PostSummary[]> {
   const searchParams = new URLSearchParams();
   if (params?.search) searchParams.append('search', params.search);
   if (params?.major) searchParams.append('major', params.major);
@@ -56,13 +79,90 @@ export const getPosts = async (params?: {
   const url = `${API_BASE}/api/posts${queryString ? `?${queryString}` : ''}`;
 
   const res = await fetch(url);
+  if (!res.ok) throw new Error('족보 목록을 불러오는데 실패했습니다.');
 
-  if (!res.ok) {
-    throw new Error('족보 목록을 불러오는데 실패했습니다.');
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : data?.content ?? [];
+
+  return list.map(mapPostSummary);
+}
+
+
+export const getPosts = async (params?: {
+  search?: string;
+  major?: string;
+  page?: number;
+  size?: number;
+  college?: string;
+}): Promise<PostListResponse> => {
+  const search = (params?.search ?? '').trim().toLowerCase();
+  const major = params?.major;
+  const college = params?.college;
+
+  if (major && major !== 'all') {
+    let content = await fetchAllPostsFromApiPosts({ search: params?.search });
+
+    content = content.filter((p) => p.major === major);
+
+    if (search) {
+      content = content.filter((x) =>
+        (x.title + x.subject + x.professor).toLowerCase().includes(search)
+      );
+    }
+
+    return {
+      content,
+      totalElements: content.length,
+      totalPages: 1,
+      currentPage: 0,
+    };
   }
+
+  if (college) {
+    const majorsInCollege = COLLEGE_TO_MAJORS[college] ?? [];
+
+    if (majorsInCollege.length === 0) {
+      return { content: [], totalElements: 0, totalPages: 1, currentPage: 0 };
+    }
+
+    let content = await fetchAllPostsFromApiPosts({ search: params?.search });
+
+    const allowed = new Set(majorsInCollege);
+    content = content.filter((p) => allowed.has(p.major));
+
+    content.sort((a, b) =>
+      (b.uploadDate || '').localeCompare(a.uploadDate || '')
+    );
+
+    if (search) {
+      content = content.filter((x) =>
+        (x.title + x.subject + x.professor).toLowerCase().includes(search)
+      );
+    }
+
+    return {
+      content,
+      totalElements: content.length,
+      totalPages: 1,
+      currentPage: 0,
+    };
+  }
+
+  const searchParams = new URLSearchParams();
+  if (params?.search) searchParams.append('search', params.search);
+  if (params?.major) searchParams.append('major', params.major);
+  if (params?.page !== undefined) searchParams.append('page', params.page.toString());
+  if (params?.size !== undefined) searchParams.append('size', params.size.toString());
+
+  const queryString = searchParams.toString();
+  const url = `${API_BASE}/api/posts${queryString ? `?${queryString}` : ''}`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('족보 목록을 불러오는데 실패했습니다.');
 
   return res.json();
 };
+
 
 export interface DownloadResponse {
   pdfUrl: string;
@@ -81,20 +181,17 @@ export interface AlreadyDownloadedResponse {
 
 export const downloadPost = async (postId: number): Promise<DownloadResponse> => {
   const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다.');
-  }
+  if (!token) throw new Error('로그인이 필요합니다.');
 
   const res = await fetch(`${API_BASE}/api/posts/${postId}/download`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
 
   if (res.status === 409) {
-    // 이미 다운로드한 경우 - 포인트 차감 없이 URL 반환
     const data: AlreadyDownloadedResponse = await res.json();
     return {
       pdfUrl: data.pdfUrl,
@@ -106,25 +203,19 @@ export const downloadPost = async (postId: number): Promise<DownloadResponse> =>
   }
 
   if (!res.ok) {
-    let errorMessage = '다운로드 실패';
-    try {
-      const errorData = await res.json();
-      errorMessage = errorData.message || errorMessage;
-    } catch {
-      const text = await res.text();
-      errorMessage = text || errorMessage;
-    }
-    throw new Error(errorMessage);
+    const text = await res.text();
+    throw new Error(text || '다운로드 실패');
   }
 
   return res.json();
 };
 
-export const uploadPost = async (params: PostUploadParams): Promise<PostUploadResponse> => {
+
+export const uploadPost = async (
+  params: PostUploadParams
+): Promise<PostUploadResponse> => {
   const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다.');
-  }
+  if (!token) throw new Error('로그인이 필요합니다.');
 
   const formData = new FormData();
   formData.append('file', params.file);
@@ -135,22 +226,13 @@ export const uploadPost = async (params: PostUploadParams): Promise<PostUploadRe
 
   const res = await fetch(`${API_BASE}/api/posts`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
     body: formData,
   });
 
   if (!res.ok) {
-    let errorMessage = '업로드 실패';
-    try {
-      const errorData = await res.json();
-      errorMessage = errorData.message || errorMessage;
-    } catch {
-      const text = await res.text();
-      errorMessage = text || errorMessage;
-    }
-    throw new Error(errorMessage);
+    const text = await res.text();
+    throw new Error(text || '업로드 실패');
   }
 
   return res.json();
