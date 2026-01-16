@@ -56,17 +56,31 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        // major 파라미터 결정
+        // 필터 파라미터 결정
         let majorParam: string | undefined;
+        let collegeParam: string | undefined;
+
         if (selectedCollege === '교양') {
+          // 교양 게시판은 general-education 전공으로 필터
           majorParam = 'general-education';
+        } else if (selectedCollege) {
+          // 특정 단과대학 게시판
+          if (selectedMajor !== 'all') {
+            // 특정 전공 선택시
+            majorParam = selectedMajor;
+          } else {
+            // 단과대학 전체 보기시 college 파라미터 사용
+            collegeParam = selectedCollege;
+          }
         } else if (selectedMajor !== 'all') {
+          // 전체 게시판에서 특정 전공 선택시
           majorParam = selectedMajor;
         }
 
         const response = await getPosts({
           search: searchTerm || undefined,
           major: majorParam,
+          college: collegeParam,
         });
         setPosts(response.content);
         setTotalElements(response.totalElements);

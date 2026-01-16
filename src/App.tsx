@@ -7,7 +7,7 @@ import Board from "./components/Board";
 import MyPage from "./components/MyPage";
 import PdfUpload from "./components/PdfUpload";
 import { getUserInfo, removeToken, saveUserInfo } from "./utils/auth";
-import { getCurrentUser } from "./api/auth.api";
+import { getCurrentUser, logout } from "./api/auth.api";
 
 import "./App.css";
 
@@ -49,8 +49,13 @@ export default function App() {
     }
   }, [currentPage]);
 
-  const handleLogout = () => {
-    removeToken();
+  const handleLogout = async () => {
+    try {
+      await logout(); // 서버에서 HttpOnly 쿠키 삭제
+    } catch {
+      // 로그아웃 API 실패해도 로컬 정보는 삭제
+    }
+    removeToken(); // localStorage 정보 삭제
     setCurrentPage("login");
   };
 

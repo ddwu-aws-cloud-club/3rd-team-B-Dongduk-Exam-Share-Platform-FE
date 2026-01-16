@@ -70,12 +70,14 @@ export interface PostListResponse {
 export const getPosts = async (params?: {
   search?: string;
   major?: string;
+  college?: string;
   page?: number;
   size?: number;
 }): Promise<PostListResponse> => {
   const queryParams = new URLSearchParams();
   if (params?.search) queryParams.append('search', params.search);
   if (params?.major) queryParams.append('major', params.major);
+  if (params?.college) queryParams.append('college', params.college);
   if (params?.page !== undefined) queryParams.append('page', params.page.toString());
   if (params?.size !== undefined) queryParams.append('size', params.size.toString());
 

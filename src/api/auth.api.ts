@@ -9,6 +9,10 @@ export interface LoginUser {
   points: number;
   profileImage: string | null;
   isVerified: boolean;
+  totalUploads?: number;
+  totalDownloads?: number;
+  totalEarnedPoints?: number;
+  totalSpentPoints?: number;
 }
 
 interface LoginResponse {
@@ -73,6 +77,13 @@ export const getCurrentUser = async (): Promise<LoginUser | null> => {
   } catch {
     return null;
   }
+};
+
+// 로그아웃 (HttpOnly 쿠키 삭제)
+export const logout = async (): Promise<void> => {
+  await apiFetch<void>('/api/auth/logout', {
+    method: 'POST',
+  });
 };
 
 interface ProfileSetupData {
