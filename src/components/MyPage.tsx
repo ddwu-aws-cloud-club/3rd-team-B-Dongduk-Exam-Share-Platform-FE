@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import PageHeader from './PageHeader';
 import { getUserInfo } from '../utils/auth';
+import { getCurrentUser } from '../api/auth.api';
+import { getMyUploads, getMyDownloads, type MyUploadItem, type MyDownloadItem } from '../api/file.api';
 import { getAllMajors } from '../constants/majors';
 import './MyPage.css';
 
@@ -11,14 +13,8 @@ interface UserInfo {
   major: string | null;
   points: number;
   profileImage?: string | null;
-}
-
-interface Activity {
-  id: number;
-  type: 'upload' | 'download';
-  title: string;
-  date: string;
-  points: number;
+  totalEarnedPoints?: number;
+  totalSpentPoints?: number;
 }
 
 interface MyPageProps {
@@ -38,6 +34,9 @@ function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
     major: null,
     points: 0,
   });
+  const [uploadedPosts, setUploadedPosts] = useState<MyUploadItem[]>([]);
+  const [downloadedPosts, setDownloadedPosts] = useState<MyDownloadItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const allMajors = getAllMajors();
 
@@ -48,28 +47,82 @@ function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
     return major ? major.label : majorCode;
   };
 
+  // 날짜 포맷팅 함수
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  };
+
   useEffect(() => {
-    const storedUser = getUserInfo();
-    if (storedUser) {
-      setUserInfo({
-        email: storedUser.email,
-        name: storedUser.nickname || '사용자',
-        college: storedUser.college,
-        major: storedUser.major,
-        points: storedUser.points,
-        profileImage: storedUser.profileImage,
-      });
-    }
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // 서버에서 사용자 정보 가져오기
+        const serverUser = await getCurrentUser();
+        if (serverUser) {
+          setUserInfo({
+            email: serverUser.email,
+            name: serverUser.nickname || '사용자',
+            college: serverUser.college,
+            major: serverUser.major,
+            points: serverUser.points,
+            profileImage: serverUser.profileImage,
+            totalEarnedPoints: serverUser.totalEarnedPoints,
+            totalSpentPoints: serverUser.totalSpentPoints,
+          });
+        } else {
+          // 서버 조회 실패시 로컬 데이터 사용
+          const storedUser = getUserInfo();
+          if (storedUser) {
+            setUserInfo({
+              email: storedUser.email,
+              name: storedUser.nickname || '사용자',
+              college: storedUser.college,
+              major: storedUser.major,
+              points: storedUser.points,
+              profileImage: storedUser.profileImage,
+            });
+          }
+        }
+
+        // 업로드 내역 가져오기
+        const uploadsResponse = await getMyUploads(0, 100);
+        setUploadedPosts(uploadsResponse.content);
+
+        // 다운로드 내역 가져오기
+        const downloadsResponse = await getMyDownloads(0, 100);
+        setDownloadedPosts(downloadsResponse.content);
+      } catch (error) {
+        console.error('마이페이지 데이터 로딩 실패:', error);
+        // 로컬 데이터로 폴백
+        const storedUser = getUserInfo();
+        if (storedUser) {
+          setUserInfo({
+            email: storedUser.email,
+            name: storedUser.nickname || '사용자',
+            college: storedUser.college,
+            major: storedUser.major,
+            points: storedUser.points,
+            profileImage: storedUser.profileImage,
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const [uploadedPosts, setUploadedPosts] = useState<Activity[]>([]);
-  const [downloadedPosts, setDownloadedPosts] = useState<Activity[]>([]);
-
-  const totalEarned = uploadedPosts.reduce(
-    (sum, post) => sum + post.points,
+  const totalEarned = userInfo.totalEarnedPoints ?? uploadedPosts.reduce(
+    (sum, post) => sum + post.earnedPoints,
     0
   );
-  const totalSpent = downloadedPosts.reduce((sum, post) => sum + post.points, 0);
+  const totalSpent = userInfo.totalSpentPoints ?? downloadedPosts.reduce((sum, post) => sum + post.pointsDeducted, 0);
 
   return (
     <div className="mypage-container">
@@ -173,7 +226,11 @@ function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
             {activeTab === 'uploads' && (
               <div className="activity-content">
                 <h3 className="content-title">내가 업로드한 족보</h3>
-                {uploadedPosts.length === 0 ? (
+                {loading ? (
+                  <div className="empty-state">
+                    <p>로딩 중...</p>
+                  </div>
+                ) : uploadedPosts.length === 0 ? (
                   <div className="empty-state">
                     <p>업로드한 족보가 없습니다.</p>
                   </div>
@@ -183,10 +240,11 @@ function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
                       <div key={post.id} className="activity-item">
                         <div className="activity-info">
                           <h4 className="activity-title">{post.title}</h4>
-                          <p className="activity-date">{post.date}</p>
+                          <p className="activity-meta">{post.subject} · {post.professor}</p>
+                          <p className="activity-date">{formatDate(post.uploadDate)} · 다운로드 {post.downloadCount}회</p>
                         </div>
                         <span className="activity-points earn">
-                          +{post.points}P
+                          +{post.earnedPoints}P
                         </span>
                       </div>
                     ))}
@@ -198,7 +256,11 @@ function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
             {activeTab === 'downloads' && (
               <div className="activity-content">
                 <h3 className="content-title">내가 다운로드한 족보</h3>
-                {downloadedPosts.length === 0 ? (
+                {loading ? (
+                  <div className="empty-state">
+                    <p>로딩 중...</p>
+                  </div>
+                ) : downloadedPosts.length === 0 ? (
                   <div className="empty-state">
                     <p>다운로드한 족보가 없습니다.</p>
                   </div>
@@ -208,10 +270,11 @@ function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
                       <div key={post.id} className="activity-item">
                         <div className="activity-info">
                           <h4 className="activity-title">{post.title}</h4>
-                          <p className="activity-date">{post.date}</p>
+                          <p className="activity-meta">{post.subject} · {post.professor}</p>
+                          <p className="activity-date">{formatDate(post.downloadDate)}</p>
                         </div>
                         <span className="activity-points spend">
-                          -{post.points}P
+                          -{post.pointsDeducted}P
                         </span>
                       </div>
                     ))}
