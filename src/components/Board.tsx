@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { COLLEGES, getAllMajors } from '../constants/majors';
 import { getPosts, downloadPost } from '../api/file.api';
 import type { PostSummary, DownloadResponse } from '../api/file.api';
+import { reducePoints } from '../api/point.api'; 
 import PageHeader from './PageHeader';
 import './Board.css';
 
@@ -12,10 +13,16 @@ interface BoardProps {
   onLogout: () => void;
   onMyPageClick: () => void;
   userPoints: number;
-  onPointsUpdate?: (newPoints: number) => void;
 }
 
-function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints, onPointsUpdate }: BoardProps) {
+function Board({ 
+  selectedCollege, 
+  onNavigateToHome, 
+  onUploadClick, 
+  onLogout, 
+  onMyPageClick, 
+  userPoints 
+}: BoardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('all');
   const [posts, setPosts] = useState<PostSummary[]>([]);
@@ -50,7 +57,6 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
     fetchPosts();
   }, [fetchPosts]);
 
-  // 검색어 입력 시 debounce 처리
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchPosts();
@@ -59,27 +65,27 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
   }, [searchTerm]);
 
   const handleDownload = async (post: PostSummary) => {
-    if (downloadedPosts.has(post.id) || isDownloading === post.id) {
+    if (isDownloading === post.id) return;
+
+    const confirmMessage = `${post.points} 포인트가 차감됩니다. 다운로드하시겠습니까?`;
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     setIsDownloading(post.id);
 
     try {
+      await reducePoints(post.id, `[자료 다운로드] ${post.title}`);
+
       const response: DownloadResponse = await downloadPost(post.id);
 
       window.open(response.pdfUrl, '_blank');
 
       setDownloadedPosts((prev) => new Set(prev).add(post.id));
-
-      if (response.pointsDeducted > 0 && onPointsUpdate) {
-        onPointsUpdate(response.remainingPoints);
-      }
-
-      // 다운로드 수 갱신
+      
       fetchPosts();
 
-      alert(response.message);
+      alert("다운로드가 시작되었습니다.");
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '다운로드에 실패했습니다.';
@@ -191,13 +197,13 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
 
                   <button
                     onClick={() => handleDownload(post)}
-                    disabled={downloadedPosts.has(post.id) || isDownloading === post.id}
+                    disabled={isDownloading === post.id}
                     className={`download-button ${downloadedPosts.has(post.id) ? 'downloaded' : ''} ${isDownloading === post.id ? 'loading' : ''}`}
                   >
                     {isDownloading === post.id
-                      ? '다운로드 중...'
+                      ? '처리 중...'
                       : downloadedPosts.has(post.id)
-                        ? '다운로드 완료'
+                        ? '다시 받기' 
                         : `다운로드 (${post.points}P)`}
                   </button>
                 </div>

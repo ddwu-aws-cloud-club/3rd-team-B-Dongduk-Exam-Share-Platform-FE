@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { COLLEGES } from '../constants/majors';
+import { getPointBalance } from '../api/point.api';
 import './Home.css';
 
 interface HomeProps {
@@ -9,12 +10,23 @@ interface HomeProps {
 }
 
 function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
-  const [userPoints, setUserPoints] = useState<number>(1000);
+  const [userPoints, setUserPoints] = useState<number>(0);
   const [userName, setUserName] = useState<string>('');
 
   useEffect(() => {
     const storedName = localStorage.getItem('userName') || '사용자';
     setUserName(storedName);
+
+    const fetchPoints = async () => {
+      try {
+        const balance = await getPointBalance();
+        setUserPoints(balance); 
+      } catch (error) {
+        console.error("포인트 조회 실패:", error);
+      }
+    };
+
+    fetchPoints();
   }, []);
 
   return (
@@ -27,7 +39,7 @@ function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
         <div className="header-right">
           <div className="user-points">
             <span className="points-label">내 포인트</span>
-            <span className="points-value">{userPoints}P</span>
+            <span className="points-value">{userPoints.toLocaleString()}P</span>
           </div>
           <button onClick={onNavigateToMyPage} className="header-button">
             마이페이지

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ProfileSetup from "./components/ProfileSetup";
@@ -6,6 +6,7 @@ import Home from "./components/Home";
 import Board from "./components/Board";
 import MyPage from "./components/MyPage";
 import PdfUpload from "./components/PdfUpload";
+import { getPointBalance } from "./api/point.api"; 
 
 import "./App.css";
 
@@ -15,15 +16,17 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("login");
   const [userEmail, setUserEmail] = useState<string>("");
   const [selectedCollege, setSelectedCollege] = useState<string | null>(null);
-  const [userPoints, setUserPoints] = useState<number>(1000); // TODO: API에서 가져오기
+  const [userPoints, setUserPoints] = useState<number>(0); 
 
-  const handlePointsUpdate = (points: number) => {
-    setUserPoints(points);
-  };
-
-  const handlePointsAdd = (earnedPoints: number) => {
-    setUserPoints((prev) => prev + earnedPoints);
-  };
+  useEffect(() => {
+    if (currentPage !== "login" && currentPage !== "signup" && currentPage !== "profile-setup") {
+      getPointBalance()
+        .then((balance) => setUserPoints(balance))
+        .catch((err) => {
+          console.error("앱 포인트 조회 실패:", err);
+        });
+    }
+  }, [currentPage]); 
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -67,8 +70,7 @@ export default function App() {
           onUploadClick={() => setCurrentPage("upload")}
           onLogout={handleLogout}
           onMyPageClick={() => setCurrentPage("mypage")}
-          userPoints={userPoints}
-          onPointsUpdate={handlePointsUpdate}
+          userPoints={userPoints} 
         />
       ) : currentPage === "mypage" ? (
         <MyPage
@@ -83,7 +85,6 @@ export default function App() {
           onLogout={handleLogout}
           onMyPageClick={() => setCurrentPage("mypage")}
           userPoints={userPoints}
-          onPointsUpdate={handlePointsAdd}
         />
       ) : null}
     </div>
