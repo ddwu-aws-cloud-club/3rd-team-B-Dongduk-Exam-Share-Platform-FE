@@ -16,7 +16,7 @@ interface BoardProps {
   onPointsUpdate?: (newPoints: number) => void;
 }
 
-function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints, onPointsUpdate }: BoardProps) {
+function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints, onPointsUpdate: _onPointsUpdate }: BoardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('all');
   const [downloadedPosts, setDownloadedPosts] = useState<Set<number>>(new Set());
@@ -26,6 +26,7 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
   const [ratings, setRatings] = useState<Map<number, 'like' | 'dislike'>>(new Map());
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [editingPost, setEditingPost] = useState<PostSummary | null>(null);
+  const [isDownloading, setIsDownloading] = useState<number | null>(null);
 
   // 현재 로그인한 사용자 ID 가져오기 및 다운로드 내역 불러오기
   useEffect(() => {
@@ -57,31 +58,17 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        // 필터 파라미터 결정
+        // major 파라미터 결정
         let majorParam: string | undefined;
-        let collegeParam: string | undefined;
-
         if (selectedCollege === '교양') {
-          // 교양 게시판은 general-education 전공으로 필터
           majorParam = 'general-education';
-        } else if (selectedCollege) {
-          // 특정 단과대학 게시판
-          if (selectedMajor !== 'all') {
-            // 특정 전공 선택시
-            majorParam = selectedMajor;
-          } else {
-            // 단과대학 전체 보기시 college 파라미터 사용
-            collegeParam = selectedCollege;
-          }
         } else if (selectedMajor !== 'all') {
-          // 전체 게시판에서 특정 전공 선택시
           majorParam = selectedMajor;
         }
 
         const response = await getPosts({
           search: searchTerm || undefined,
           major: majorParam,
-          college: collegeParam,
         });
         setPosts(response.content);
         setTotalElements(response.totalElements);
@@ -97,10 +84,11 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
   }, [searchTerm, selectedMajor, selectedCollege]);
 
   const handleDownload = async (post: PostSummary) => {
-    if (downloadedPosts.has(post.id)) {
+    if (downloadedPosts.has(post.id) || isDownloading !== null) {
       return;
     }
 
+    setIsDownloading(post.id);
     try {
       const response = await downloadPost(post.id);
 
@@ -140,6 +128,8 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
     } catch (error) {
       const message = error instanceof Error ? error.message : '다운로드 중 오류가 발생했습니다.';
       alert(message);
+    } finally {
+      setIsDownloading(null);
     }
   };
 

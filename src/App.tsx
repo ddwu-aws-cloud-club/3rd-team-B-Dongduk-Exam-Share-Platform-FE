@@ -49,6 +49,10 @@ export default function App() {
     }
   }, [currentPage]);
 
+  const handlePointsUpdate = (points: number) => {
+    setUserPoints(points);
+  };
+
   const handleLogout = async () => {
     try {
       await logout(); // 서버에서 HttpOnly 쿠키 삭제

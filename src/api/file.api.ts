@@ -28,9 +28,12 @@ export interface PostSummary {
   professor: string;
   major: string;
   uploadDate: string;
+  uploaderId: number;
   uploaderNickname: string;
   downloadCount: number;
   points: number;
+  likeCount: number;
+  dislikeCount: number;
 }
 
 export interface PostListResponse {
@@ -46,19 +49,19 @@ export const getPosts = async (params?: {
   page?: number;
   size?: number;
 }): Promise<PostListResponse> => {
-  const searchParams = new URLSearchParams();
-  if (params?.search) searchParams.append('search', params.search);
-  if (params?.major) searchParams.append('major', params.major);
-  if (params?.page !== undefined) searchParams.append('page', params.page.toString());
-  if (params?.size !== undefined) searchParams.append('size', params.size.toString());
+  const queryParams = new URLSearchParams();
+  if (params?.search) queryParams.append('search', params.search);
+  if (params?.major) queryParams.append('major', params.major);
+  if (params?.page !== undefined) queryParams.append('page', params.page.toString());
+  if (params?.size !== undefined) queryParams.append('size', params.size.toString());
 
-  const queryString = searchParams.toString();
+  const queryString = queryParams.toString();
   const url = `${API_BASE}/api/posts${queryString ? `?${queryString}` : ''}`;
 
   const res = await fetch(url);
 
   if (!res.ok) {
-    throw new Error('족보 목록을 불러오는데 실패했습니다.');
+    throw new Error('게시글 목록을 불러오는데 실패했습니다.');
   }
 
   return res.json();
@@ -94,7 +97,6 @@ export const downloadPost = async (postId: number): Promise<DownloadResponse> =>
   });
 
   if (res.status === 409) {
-    // 이미 다운로드한 경우 - 포인트 차감 없이 URL 반환
     const data: AlreadyDownloadedResponse = await res.json();
     return {
       pdfUrl: data.pdfUrl,
@@ -119,62 +121,6 @@ export const downloadPost = async (postId: number): Promise<DownloadResponse> =>
 
   return res.json();
 };
-
-export interface PostSummary {
-  id: number;
-  title: string;
-  subject: string;
-  professor: string;
-  major: string;
-  uploadDate: string;
-  uploaderId: number;
-  uploaderNickname: string;
-  downloadCount: number;
-  points: number;
-  likeCount: number;
-  dislikeCount: number;
-}
-
-export interface PostListResponse {
-  content: PostSummary[];
-  totalElements: number;
-  totalPages: number;
-  currentPage: number;
-}
-
-export const getPosts = async (params?: {
-  search?: string;
-  major?: string;
-  college?: string;
-  page?: number;
-  size?: number;
-}): Promise<PostListResponse> => {
-  const queryParams = new URLSearchParams();
-  if (params?.search) queryParams.append('search', params.search);
-  if (params?.major) queryParams.append('major', params.major);
-  if (params?.college) queryParams.append('college', params.college);
-  if (params?.page !== undefined) queryParams.append('page', params.page.toString());
-  if (params?.size !== undefined) queryParams.append('size', params.size.toString());
-
-  const queryString = queryParams.toString();
-  const url = `${API_BASE}/api/posts${queryString ? `?${queryString}` : ''}`;
-
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    throw new Error('게시글 목록을 불러오는데 실패했습니다.');
-  }
-
-  return res.json();
-};
-
-export interface DownloadResponse {
-  pdfUrl: string;
-  fileName: string;
-  pointsDeducted: number;
-  remainingPoints: number;
-  message: string;
-}
 
 export interface RatingResponse {
   likeCount: number;
@@ -233,34 +179,6 @@ export const getDownloadedPostIds = async (): Promise<number[]> => {
   } catch {
     return [];
   }
-};
-
-export const downloadPost = async (postId: number): Promise<DownloadResponse> => {
-  const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
-  const res = await fetch(`${API_BASE}/api/posts/${postId}/download`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!res.ok) {
-    let errorMessage = '다운로드 실패';
-    try {
-      const errorData = await res.json();
-      errorMessage = errorData.message || errorMessage;
-    } catch {
-      const text = await res.text();
-      errorMessage = text || errorMessage;
-    }
-    throw new Error(errorMessage);
-  }
-
-  return res.json();
 };
 
 export interface PostUpdateParams {

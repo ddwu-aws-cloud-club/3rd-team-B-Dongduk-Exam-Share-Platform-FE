@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { COLLEGES, getAllMajors } from '../constants/majors';
+import { getAllMajors } from '../constants/majors';
 import { updatePost, type PostSummary, type PostUpdateParams } from '../api/file.api';
 import './EditPostModal.css';
 
