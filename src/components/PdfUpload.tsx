@@ -1,6 +1,8 @@
 import { useState, useRef, type DragEvent } from 'react';
 import { uploadPost, type PostUploadResponse } from '../api/file.api';
+import { getCurrentUser } from '../api/auth.api';
 import { getAllMajors } from '../constants/majors';
+import { saveUserInfo } from '../utils/auth';
 import PageHeader from './PageHeader';
 import './PdfUpload.css';
 
@@ -10,7 +12,7 @@ interface PdfUploadProps {
   onLogout: () => void;
   onMyPageClick: () => void;
   userPoints: number;
-  onPointsUpdate?: (earnedPoints: number) => void;
+  onPointsUpdate?: (points: number) => void;
 }
 
 function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClick, userPoints, onPointsUpdate }: PdfUploadProps) {
@@ -105,6 +107,13 @@ function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClic
       }
 
       alert(data.message);
+
+      // 서버에서 최신 사용자 정보 가져와서 포인트 업데이트
+      const updatedUser = await getCurrentUser();
+      if (updatedUser) {
+        saveUserInfo(updatedUser);
+        onPointsUpdate?.(updatedUser.points);
+      }
 
       setFile(null);
       setTitle('');
@@ -255,6 +264,7 @@ function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClic
                   className="form-select"
                 >
                   <option value="">전공을 선택하세요</option>
+                  <option value="general-education">교양</option>
                   {allMajors.map((m) => (
                     <option key={m.value} value={m.value}>
                       {m.label}

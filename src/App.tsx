@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ProfileSetup from "./components/ProfileSetup";
@@ -6,6 +6,8 @@ import Home from "./components/Home";
 import Board from "./components/Board";
 import MyPage from "./components/MyPage";
 import PdfUpload from "./components/PdfUpload";
+import { getUserInfo, removeToken, saveUserInfo } from "./utils/auth";
+import { getCurrentUser } from "./api/auth.api";
 
 import "./App.css";
 
@@ -15,7 +17,37 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>("login");
   const [userEmail, setUserEmail] = useState<string>("");
   const [selectedCollege, setSelectedCollege] = useState<string | null>(null);
-  const [userPoints, setUserPoints] = useState<number>(1000); // TODO: API에서 가져오기
+  const [userPoints, setUserPoints] = useState<number>(0);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+
+  // 앱 시작 시 서버에서 로그인 상태 확인
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          // 서버에서 사용자 정보를 가져왔으면 로그인 상태 유지
+          saveUserInfo(user);
+          setUserPoints(user.points);
+          setCurrentPage("home");
+        }
+      } catch {
+        // 인증 실패 시 로그인 페이지 유지
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // 페이지 변경 시 포인트 업데이트
+  useEffect(() => {
+    const userInfo = getUserInfo();
+    if (userInfo) {
+      setUserPoints(userInfo.points);
+    }
+  }, [currentPage]);
 
   const handlePointsUpdate = (points: number) => {
     setUserPoints(points);
@@ -26,10 +58,18 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userName');
+    removeToken();
     setCurrentPage("login");
   };
+
+  // 인증 상태 확인 중 로딩 표시
+  if (isCheckingAuth) {
+    return (
+      <div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <p>로딩 중...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -83,7 +123,7 @@ export default function App() {
           onLogout={handleLogout}
           onMyPageClick={() => setCurrentPage("mypage")}
           userPoints={userPoints}
-          onPointsUpdate={handlePointsAdd}
+          onPointsUpdate={(points) => setUserPoints(points)}
         />
       ) : null}
     </div>

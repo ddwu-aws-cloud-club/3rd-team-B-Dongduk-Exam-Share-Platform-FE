@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import PageHeader from './PageHeader';
+import { getUserInfo } from '../utils/auth';
+import { getAllMajors } from '../constants/majors';
 import './MyPage.css';
 
 interface UserInfo {
   email: string;
   name: string;
-  major: string;
+  college: string | null;
+  major: string | null;
   points: number;
-  profileImage?: string;
+  profileImage?: string | null;
 }
 
 interface Activity {
@@ -29,45 +32,38 @@ function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
     'info'
   );
   const [userInfo, setUserInfo] = useState<UserInfo>({
-    email: 'student@dongduk.ac.kr',
-    name: '홍길동',
-    major: '컴퓨터학전공',
-    points: 1000,
+    email: '',
+    name: '',
+    college: null,
+    major: null,
+    points: 0,
   });
 
-  const [uploadedPosts, setUploadedPosts] = useState<Activity[]>([
-    {
-      id: 1,
-      type: 'upload',
-      title: '2024-2학기 자료구조 중간고사 족보',
-      date: '2024-10-15',
-      points: 100,
-    },
-    {
-      id: 2,
-      type: 'upload',
-      title: '2024-1학기 알고리즘 기말고사 족보',
-      date: '2024-06-20',
-      points: 100,
-    },
-  ]);
+  const allMajors = getAllMajors();
 
-  const [downloadedPosts, setDownloadedPosts] = useState<Activity[]>([
-    {
-      id: 1,
-      type: 'download',
-      title: '2024-2학기 운영체제 중간고사 족보',
-      date: '2024-10-18',
-      points: 50,
-    },
-    {
-      id: 2,
-      type: 'download',
-      title: '2024-1학기 데이터베이스 기말고사 족보',
-      date: '2024-06-25',
-      points: 50,
-    },
-  ]);
+  // 전공 코드를 한글 이름으로 변환
+  const getMajorLabel = (majorCode: string | null): string => {
+    if (!majorCode) return '-';
+    const major = allMajors.find((m) => m.value === majorCode);
+    return major ? major.label : majorCode;
+  };
+
+  useEffect(() => {
+    const storedUser = getUserInfo();
+    if (storedUser) {
+      setUserInfo({
+        email: storedUser.email,
+        name: storedUser.nickname || '사용자',
+        college: storedUser.college,
+        major: storedUser.major,
+        points: storedUser.points,
+        profileImage: storedUser.profileImage,
+      });
+    }
+  }, []);
+
+  const [uploadedPosts, setUploadedPosts] = useState<Activity[]>([]);
+  const [downloadedPosts, setDownloadedPosts] = useState<Activity[]>([]);
 
   const totalEarned = uploadedPosts.reduce(
     (sum, post) => sum + post.points,
@@ -104,7 +100,7 @@ function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
             <div className="profile-info">
               <h2 className="profile-name">{userInfo.name}</h2>
               <p className="profile-email">{userInfo.email}</p>
-              <p className="profile-major">{userInfo.major}</p>
+              <p className="profile-major">{userInfo.college} {getMajorLabel(userInfo.major)}</p>
             </div>
           </div>
 
@@ -163,12 +159,12 @@ function MyPage({ onNavigateToHome, onLogout, userPoints }: MyPageProps) {
                     <span className="info-value">{userInfo.name}</span>
                   </div>
                   <div className="info-row">
-                    <span className="info-label">전공</span>
-                    <span className="info-value">{userInfo.major}</span>
+                    <span className="info-label">단과대학</span>
+                    <span className="info-value">{userInfo.college || '-'}</span>
                   </div>
                   <div className="info-row">
-                    <span className="info-label">가입일</span>
-                    <span className="info-value">2024-03-01</span>
+                    <span className="info-label">전공</span>
+                    <span className="info-value">{getMajorLabel(userInfo.major)}</span>
                   </div>
                 </div>
               </div>

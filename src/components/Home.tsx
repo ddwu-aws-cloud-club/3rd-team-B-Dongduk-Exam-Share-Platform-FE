@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { COLLEGES } from '../constants/majors';
+import { getUserInfo } from '../utils/auth';
+import { getPosts } from '../api/file.api';
 import './Home.css';
 
 interface HomeProps {
@@ -9,12 +11,61 @@ interface HomeProps {
 }
 
 function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
-  const [userPoints, setUserPoints] = useState<number>(1000);
+  const [userPoints, setUserPoints] = useState<number>(0);
   const [userName, setUserName] = useState<string>('');
+  const [totalPosts, setTotalPosts] = useState<number>(0);
+  const [collegeCounts, setCollegeCounts] = useState<Record<string, number>>({});
+  const [gyoyangCount, setGyoyangCount] = useState<number>(0);
 
   useEffect(() => {
-    const storedName = localStorage.getItem('userName') || '사용자';
-    setUserName(storedName);
+    const userInfo = getUserInfo();
+    if (userInfo) {
+      setUserName(userInfo.nickname || '사용자');
+      setUserPoints(userInfo.points);
+    }
+
+    // 전체 족보 개수 가져오기
+    const fetchTotalPosts = async () => {
+      try {
+        const response = await getPosts({ size: 1 });
+        setTotalPosts(response.totalElements);
+      } catch (error) {
+        console.error('족보 개수 불러오기 실패:', error);
+      }
+    };
+    fetchTotalPosts();
+
+    // 각 단과대학별 족보 개수 가져오기
+    const fetchCollegeCounts = async () => {
+      const counts: Record<string, number> = {};
+
+      for (const college of COLLEGES) {
+        let collegeTotal = 0;
+        for (const major of college.majors) {
+          try {
+            const response = await getPosts({ major: major.value, size: 1 });
+            collegeTotal += response.totalElements;
+          } catch (error) {
+            // ignore
+          }
+        }
+        counts[college.name] = collegeTotal;
+      }
+
+      setCollegeCounts(counts);
+    };
+    fetchCollegeCounts();
+
+    // 교양 게시판 개수 가져오기
+    const fetchGyoyangCount = async () => {
+      try {
+        const response = await getPosts({ major: 'general-education', size: 1 });
+        setGyoyangCount(response.totalElements);
+      } catch (error) {
+        console.error('교양 족보 개수 불러오기 실패:', error);
+      }
+    };
+    fetchGyoyangCount();
   }, []);
 
   return (
@@ -57,9 +108,9 @@ function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
               >
                 <h4 className="college-name">{college.name}</h4>
                 <p className="college-majors-count">
-                  {college.majors.length > 0
-                    ? `${college.majors.length}개 전공`
-                    : '전공 정보 없음'}
+                  {collegeCounts[college.name] !== undefined
+                    ? `${collegeCounts[college.name]}개의 족보`
+                    : '로딩 중...'}
                 </p>
               </div>
             ))}
@@ -71,17 +122,17 @@ function Home({ onNavigateToBoard, onNavigateToMyPage, onLogout }: HomeProps) {
           <div className="quick-actions">
             <button
               className="quick-action-button"
-              onClick={() => onNavigateToBoard('ARETE 교양대학')}
+              onClick={() => onNavigateToBoard('교양')}
             >
               <div className="action-icon">📖</div>
-              <div className="action-label">교양 게시판</div>
+              <div className="action-label">교양 게시판 ({gyoyangCount}개)</div>
             </button>
             <button
               className="quick-action-button"
               onClick={() => onNavigateToBoard()}
             >
               <div className="action-icon">📚</div>
-              <div className="action-label">전체 족보 보기</div>
+              <div className="action-label">전체 족보 보기 ({totalPosts}개)</div>
             </button>
           </div>
         </section>

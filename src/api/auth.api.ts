@@ -1,8 +1,19 @@
 import { apiFetch } from './client';
 
+export interface LoginUser {
+  id: number;
+  email: string;
+  nickname: string | null;
+  college: string | null;
+  major: string | null;
+  points: number;
+  profileImage: string | null;
+  isVerified: boolean;
+}
+
 interface LoginResponse {
-  token?: string;
-  message?: string;
+  token: string;
+  user: LoginUser;
 }
 
 interface SignupResponse {
@@ -52,6 +63,16 @@ export const login = async (email: string, password: string): Promise<LoginRespo
     },
     body: JSON.stringify({ email, password }),
   });
+};
+
+// 현재 로그인한 사용자 정보 조회 (쿠키 기반 인증)
+export const getCurrentUser = async (): Promise<LoginUser | null> => {
+  try {
+    const response = await apiFetch<LoginUser>('/api/users/me');
+    return response;
+  } catch {
+    return null;
+  }
 };
 
 interface ProfileSetupData {

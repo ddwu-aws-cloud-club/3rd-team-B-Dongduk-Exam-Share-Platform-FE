@@ -198,7 +198,7 @@ function ProfileSetup({ email, onProfileComplete }: ProfileSetupProps) {
               >
                 <option value="">전공을 선택하세요</option>
                 {getCurrentMajors().map((major) => (
-                  <option key={major.value} value={major.value}>
+                  <option key={major.value} value={major.label}>
                     {major.label}
                   </option>
                 ))}

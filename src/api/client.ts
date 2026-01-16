@@ -12,7 +12,7 @@ export async function apiFetch<T = any>(
 ): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
-    credentials: 'omit',
+    credentials: 'include', // 쿠키 전송을 위해 include로 변경
   });
 
   if (!res.ok) {
