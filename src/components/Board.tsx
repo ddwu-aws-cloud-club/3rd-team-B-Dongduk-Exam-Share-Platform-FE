@@ -13,9 +13,10 @@ interface BoardProps {
   onLogout: () => void;
   onMyPageClick: () => void;
   userPoints: number;
+  onPointsUpdate?: (newPoints: number) => void;
 }
 
-function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints }: BoardProps) {
+function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints, onPointsUpdate }: BoardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('all');
   const [downloadedPosts, setDownloadedPosts] = useState<Set<number>>(new Set());
@@ -349,8 +350,8 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
 
                   <button
                     onClick={() => handleDownload(post)}
-                    disabled={downloadedPosts.has(post.id)}
-                    className={`download-button ${downloadedPosts.has(post.id) ? 'downloaded' : ''}`}
+                    disabled={downloadedPosts.has(post.id) || isDownloading === post.id}
+                    className={`download-button ${downloadedPosts.has(post.id) ? 'downloaded' : ''} ${isDownloading === post.id ? 'loading' : ''}`}
                   >
                     {downloadedPosts.has(post.id) ? '다운로드 완료' : `다운로드 (${getDownloadCost(post)}P)`}
                   </button>

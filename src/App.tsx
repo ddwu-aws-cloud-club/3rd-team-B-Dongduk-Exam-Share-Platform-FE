@@ -105,6 +105,7 @@ export default function App() {
           onLogout={handleLogout}
           onMyPageClick={() => setCurrentPage("mypage")}
           userPoints={userPoints}
+          onPointsUpdate={handlePointsUpdate}
         />
       ) : currentPage === "mypage" ? (
         <MyPage
