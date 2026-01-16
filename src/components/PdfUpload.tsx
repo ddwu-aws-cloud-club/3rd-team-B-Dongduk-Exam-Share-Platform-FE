@@ -100,6 +100,12 @@ function PdfUpload({ onNavigateToBoard, onNavigateToHome, onLogout, onMyPageClic
         major: major,
       });
       setResult(data);
+
+      // 포인트 갱신
+      if (onPointsUpdate && data.earnedPoints > 0) {
+        onPointsUpdate(data.earnedPoints);
+      }
+
       alert(data.message);
 
       // 서버에서 최신 사용자 정보 가져와서 포인트 업데이트

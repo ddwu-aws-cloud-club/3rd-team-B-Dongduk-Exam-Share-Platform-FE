@@ -49,6 +49,14 @@ export default function App() {
     }
   }, [currentPage]);
 
+  const handlePointsUpdate = (points: number) => {
+    setUserPoints(points);
+  };
+
+  const handlePointsAdd = (earnedPoints: number) => {
+    setUserPoints((prev) => prev + earnedPoints);
+  };
+
   const handleLogout = () => {
     removeToken();
     setCurrentPage("login");
@@ -100,6 +108,7 @@ export default function App() {
           onLogout={handleLogout}
           onMyPageClick={() => setCurrentPage("mypage")}
           userPoints={userPoints}
+          onPointsUpdate={handlePointsUpdate}
         />
       ) : currentPage === "mypage" ? (
         <MyPage
