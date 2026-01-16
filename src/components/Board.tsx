@@ -1,22 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { COLLEGES, getAllMajors } from '../constants/majors';
+import { deletePost as deletePostApi, downloadPost, getDownloadedPostIds, getPosts, ratePost, type PostSummary } from '../api/file.api';
+import { getUserInfo, saveUserInfo } from '../utils/auth';
 import PageHeader from './PageHeader';
+import EditPostModal from './EditPostModal';
 import './Board.css';
-
-interface Post {
-  id: number;
-  title: string;
-  subject: string;
-  professor: string;
-  major: string;
-  uploadDate: string;
-  uploader: string;
-  downloadCount: number;
-  points: number;
-  pdfUrl?: string;
-  likeCount: number;
-  dislikeCount: number;
-}
 
 interface BoardProps {
   selectedCollege: string | null;
@@ -30,106 +18,205 @@ interface BoardProps {
 function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onMyPageClick, userPoints }: BoardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('all');
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [downloadedPosts, setDownloadedPosts] = useState<Set<number>>(new Set());
+  const [posts, setPosts] = useState<PostSummary[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [ratings, setRatings] = useState<Map<number, 'like' | 'dislike'>>(new Map());
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [editingPost, setEditingPost] = useState<PostSummary | null>(null);
 
-  const mockPosts: Post[] = [
-    {
-      id: 1,
-      title: '2024-2학기 중간고사 족보',
-      subject: '자료구조',
-      professor: '김교수',
-      major: 'computer-science',
-      uploadDate: '2024-10-15',
-      uploader: '익명',
-      downloadCount: 45,
-      points: 50,
-      likeCount: 32,
-      dislikeCount: 3,
-    },
-    {
-      id: 2,
-      title: '2024-1학기 기말고사 족보',
-      subject: '알고리즘',
-      professor: '이교수',
-      major: 'computer-science',
-      uploadDate: '2024-06-20',
-      uploader: '익명',
-      downloadCount: 78,
-      points: 50,
-      likeCount: 56,
-      dislikeCount: 8,
-    },
-    {
-      id: 3,
-      title: '2024-2학기 중간고사',
-      subject: '경영학원론',
-      professor: '박교수',
-      major: 'business-admin',
-      uploadDate: '2024-10-18',
-      uploader: '익명',
-      downloadCount: 32,
-      points: 50,
-      likeCount: 24,
-      dislikeCount: 2,
-    },
-  ];
+  // 현재 로그인한 사용자 ID 가져오기 및 다운로드 내역 불러오기
+  useEffect(() => {
+    const userInfo = getUserInfo();
+    if (userInfo) {
+      setCurrentUserId(userInfo.id);
+    }
+
+    // 서버에서 다운로드 내역 불러오기
+    const fetchDownloadedPosts = async () => {
+      const downloadedIds = await getDownloadedPostIds();
+      if (downloadedIds.length > 0) {
+        setDownloadedPosts(new Set(downloadedIds));
+      }
+    };
+
+    fetchDownloadedPosts();
+  }, []);
 
   const allMajors = getAllMajors();
 
   // 선택된 단과대학의 전공만 가져오기
-  const availableMajors = selectedCollege
+  const availableMajors = selectedCollege && selectedCollege !== '교양'
     ? COLLEGES.find((c) => c.name === selectedCollege)?.majors || []
     : allMajors;
 
-  const filteredPosts = mockPosts.filter((post) => {
-    const matchesSearch =
-      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.professor.toLowerCase().includes(searchTerm.toLowerCase());
+  // 게시글 목록 불러오기
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        // major 파라미터 결정
+        let majorParam: string | undefined;
+        if (selectedCollege === '교양') {
+          majorParam = 'general-education';
+        } else if (selectedMajor !== 'all') {
+          majorParam = selectedMajor;
+        }
 
-    const matchesMajor = selectedMajor === 'all' || post.major === selectedMajor;
+        const response = await getPosts({
+          search: searchTerm || undefined,
+          major: majorParam,
+        });
+        setPosts(response.content);
+        setTotalElements(response.totalElements);
+      } catch (error) {
+        console.error('게시글 불러오기 실패:', error);
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return matchesSearch && matchesMajor;
-  });
+    fetchPosts();
+  }, [searchTerm, selectedMajor, selectedCollege]);
 
-  const handleDownload = (post: Post) => {
+  const handleDownload = async (post: PostSummary) => {
     if (downloadedPosts.has(post.id)) {
-      return; // 이미 다운로드한 경우 무시
+      return;
     }
-    alert(`"${post.title}" 다운로드! (${post.points}P 차감)`);
-    setDownloadedPosts((prev) => new Set(prev).add(post.id));
+
+    try {
+      const response = await downloadPost(post.id);
+
+      setDownloadedPosts((prev) => new Set(prev).add(post.id));
+
+      // 다운로드 횟수 즉시 증가
+      setPosts((prevPosts) =>
+        prevPosts.map((p) =>
+          p.id === post.id ? { ...p, downloadCount: p.downloadCount + 1 } : p
+        )
+      );
+
+      const userInfo = getUserInfo();
+      if (userInfo) {
+        userInfo.points = response.remainingPoints;
+        saveUserInfo(userInfo);
+      }
+
+      // 실제 PDF 다운로드 (blob 방식으로 강제 다운로드)
+      try {
+        const pdfResponse = await fetch(response.pdfUrl);
+        const blob = await pdfResponse.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = response.fileName || `${post.title}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      } catch {
+        // blob 다운로드 실패시 새 창으로 열기
+        window.open(response.pdfUrl, '_blank');
+      }
+
+      alert(`다운로드 완료! (${response.pointsDeducted}P 차감, 잔여: ${response.remainingPoints}P)`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '다운로드 중 오류가 발생했습니다.';
+      alert(message);
+    }
   };
 
-  const handleRating = (postId: number, type: 'like' | 'dislike') => {
+  const handleRating = async (postId: number, type: 'like' | 'dislike') => {
     if (!downloadedPosts.has(postId)) {
       alert('다운로드 후에 평가할 수 있습니다.');
       return;
     }
 
-    const currentRating = ratings.get(postId);
-    if (currentRating === type) {
-      // 이미 같은 평가를 한 경우 취소
-      setRatings((prev) => {
-        const newRatings = new Map(prev);
-        newRatings.delete(postId);
-        return newRatings;
-      });
-    } else {
-      // 새로운 평가 또는 다른 평가로 변경
-      setRatings((prev) => {
-        const newRatings = new Map(prev);
-        newRatings.set(postId, type);
-        return newRatings;
-      });
+    try {
+      const response = await ratePost(postId, type);
+
+      // 로컬 상태 업데이트 - 좋아요/싫어요 수 갱신
+      setPosts((prevPosts) =>
+        prevPosts.map((p) =>
+          p.id === postId
+            ? { ...p, likeCount: response.likeCount, dislikeCount: response.dislikeCount }
+            : p
+        )
+      );
+
+      // 사용자의 평가 상태 업데이트
+      if (response.userRating) {
+        setRatings((prev) => {
+          const newRatings = new Map(prev);
+          newRatings.set(postId, response.userRating as 'like' | 'dislike');
+          return newRatings;
+        });
+      } else {
+        setRatings((prev) => {
+          const newRatings = new Map(prev);
+          newRatings.delete(postId);
+          return newRatings;
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '평가 중 오류가 발생했습니다.';
+      alert(message);
+    }
+  };
+
+  // 전공 코드를 한글 이름으로 변환
+  const getMajorLabel = (majorCode: string): string => {
+    if (majorCode === 'general-education') return '교양';
+    const major = allMajors.find((m) => m.value === majorCode);
+    return major ? major.label : majorCode;
+  };
+
+  // 내 게시글인지 확인
+  const isMyPost = (post: PostSummary): boolean => {
+    return currentUserId !== null && post.uploaderId === currentUserId;
+  };
+
+  // 다운로드 차감 포인트 계산 (내 게시글은 0P, 다른 사람 게시글은 50P)
+  const getDownloadCost = (post: PostSummary): number => {
+    return isMyPost(post) ? 0 : post.points;
+  };
+
+  // 수정 버튼 핸들러
+  const handleEdit = (post: PostSummary) => {
+    setEditingPost(post);
+  };
+
+  // 수정 완료 핸들러
+  const handleUpdatePost = (updatedPost: PostSummary) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((p) => (p.id === updatedPost.id ? updatedPost : p))
+    );
+  };
+
+  // 삭제 핸들러
+  const handleDelete = async (post: PostSummary) => {
+    if (!confirm(`"${post.title}" 족보를 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.`)) {
+      return;
+    }
+
+    try {
+      await deletePostApi(post.id);
+      // 로컬 상태에서 삭제된 게시글 제거
+      setPosts((prevPosts) => prevPosts.filter((p) => p.id !== post.id));
+      setTotalElements((prev) => prev - 1);
+      alert('족보가 삭제되었습니다.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.';
+      alert(message);
     }
   };
 
   return (
     <div className="board-container">
       <PageHeader
-        pageTitle={selectedCollege ? `${selectedCollege} 족보 게시판` : '전체 족보 게시판'}
+        pageTitle={selectedCollege === '교양' ? '교양 족보 게시판' : selectedCollege ? `${selectedCollege} 족보 게시판` : '전체 족보 게시판'}
         onLogoClick={onNavigateToHome}
         onBackClick={onNavigateToHome}
         onLogout={onLogout}
@@ -151,46 +238,70 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
             />
           </div>
 
-          <div className="filter-group">
-            <label htmlFor="major-select" className="filter-label">
-              전공 필터
-            </label>
-            <select
-              id="major-select"
-              value={selectedMajor}
-              onChange={(e) => setSelectedMajor(e.target.value)}
-              className="major-select"
-            >
-              <option value="all">
-                {selectedCollege ? `${selectedCollege} 전체` : '전체 전공'}
-              </option>
-              {availableMajors.map((major) => (
-                <option key={major.value} value={major.value}>
-                  {major.label}
+          {selectedCollege !== '교양' && (
+            <div className="filter-group">
+              <label htmlFor="major-select" className="filter-label">
+                전공 필터
+              </label>
+              <select
+                id="major-select"
+                value={selectedMajor}
+                onChange={(e) => setSelectedMajor(e.target.value)}
+                className="major-select"
+              >
+                <option value="all">
+                  {selectedCollege ? `${selectedCollege} 전체` : '전체 전공'}
                 </option>
-              ))}
-            </select>
-          </div>
+                {availableMajors.map((major) => (
+                  <option key={major.value} value={major.value}>
+                    {major.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="posts-section">
           <div className="posts-header">
             <h2 className="posts-title">
-              총 {filteredPosts.length}개의 족보
+              총 {totalElements}개의 족보
             </h2>
           </div>
 
-          {filteredPosts.length === 0 ? (
+          {loading ? (
             <div className="no-posts">
-              <p>검색 결과가 없습니다.</p>
+              <p>로딩 중...</p>
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="no-posts">
+              <p>등록된 족보가 없습니다.</p>
             </div>
           ) : (
             <div className="posts-list">
-              {filteredPosts.map((post) => (
+              {posts.map((post) => (
                 <div key={post.id} className="post-card">
                   <div className="post-header">
                     <h3 className="post-title">{post.title}</h3>
-                    <span className="post-points">{post.points}P</span>
+                    <div className="post-header-right">
+                      {isMyPost(post) && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(post)}
+                            className="edit-button"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => handleDelete(post)}
+                            className="delete-button"
+                          >
+                            삭제
+                          </button>
+                        </>
+                      )}
+                      <span className="post-points">{post.points}P</span>
+                    </div>
                   </div>
 
                   <div className="post-info">
@@ -204,12 +315,7 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
                     </div>
                     <div className="info-row">
                       <span className="info-label">전공</span>
-                      <span className="info-value">
-                        {
-                          allMajors.find((m) => m.value === post.major)
-                            ?.label
-                        }
-                      </span>
+                      <span className="info-value">{getMajorLabel(post.major)}</span>
                     </div>
                   </div>
 
@@ -222,14 +328,9 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
                     </span>
                   </div>
 
-                  {/* 좋아요/별로에요 숫자 표시 (항상) */}
                   <div className="rating-stats">
-                    <span className="stat-item">
-                      👍 좋아요 {post.likeCount}
-                    </span>
-                    <span className="stat-item">
-                      👎 별로예요 {post.dislikeCount}
-                    </span>
+                    <span className="stat-item">👍 좋아요 {post.likeCount}</span>
+                    <span className="stat-item">👎 별로예요 {post.dislikeCount}</span>
                   </div>
 
                   <button
@@ -237,10 +338,9 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
                     disabled={downloadedPosts.has(post.id)}
                     className={`download-button ${downloadedPosts.has(post.id) ? 'downloaded' : ''}`}
                   >
-                    {downloadedPosts.has(post.id) ? '다운로드 완료' : `다운로드 (${post.points}P)`}
+                    {downloadedPosts.has(post.id) ? '다운로드 완료' : `다운로드 (${getDownloadCost(post)}P)`}
                   </button>
 
-                  {/* 평가 버튼 (다운로드 후에만) */}
                   {downloadedPosts.has(post.id) && (
                     <div className="rating-section">
                       <p className="rating-label">이 족보가 도움이 되었나요?</p>
@@ -266,6 +366,15 @@ function Board({ selectedCollege, onNavigateToHome, onUploadClick, onLogout, onM
           )}
         </div>
       </main>
+
+      {/* 수정 모달 */}
+      {editingPost && (
+        <EditPostModal
+          post={editingPost}
+          onClose={() => setEditingPost(null)}
+          onUpdate={handleUpdatePost}
+        />
+      )}
     </div>
   );
 }

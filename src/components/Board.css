@@ -195,6 +195,48 @@
   margin: 0;
 }
 
+.post-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.edit-button {
+  padding: 0.4rem 0.8rem;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.edit-button:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.delete-button {
+  padding: 0.4rem 0.8rem;
+  background: white;
+  color: #f44336;
+  border: 2px solid #f44336;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.delete-button:hover {
+  background: #f44336;
+  color: white;
+  transform: translateY(-1px);
+}
+
 .post-points {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
